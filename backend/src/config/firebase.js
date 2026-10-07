@@ -1,0 +1,25 @@
+const admin = require('firebase-admin');
+const { env } = require('./env');
+const { logger } = require('./logger');
+
+let messaging = null;
+
+/** Returns Firebase Messaging or null when FCM is not configured (dev). */
+function getMessaging() {
+  if (messaging) return messaging;
+  if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_CLIENT_EMAIL || !env.FIREBASE_PRIVATE_KEY) return null;
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: env.FIREBASE_PROJECT_ID,
+        clientEmail: env.FIREBASE_CLIENT_EMAIL,
+        privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
+    });
+    logger.info('Firebase Admin initialised');
+  }
+  messaging = admin.messaging();
+  return messaging;
+}
+
+module.exports = { getMessaging };
