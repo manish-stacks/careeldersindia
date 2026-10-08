@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAction, confirm } from '@/lib/hooks';
+import { useAuth } from '@/lib/auth';
 import { useBookingRoom, useSocketEvent, EV } from '@/lib/socket';
 import { addDays, hhmmLabel, inr, istDate, istToDate, relative, visitTime, ymdLabel } from '@/lib/format';
 import { S } from '@/lib/theme';
@@ -24,6 +25,7 @@ const SLOTS = Array.from({ length: 27 }, (_, i) => {
 });
 
 export default function BookingDetail() {
+  const auth = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const qc = useQueryClient();
   const [live, setLive] = useState<LiveLocation | null>(null);
@@ -96,6 +98,25 @@ export default function BookingDetail() {
           </Card>
         </Section>
       )}
+
+      {b.assistant?.name && !cancelled && (
+        <Section title="Care assistant">
+          <Card>
+            <KV label="Name" value={b.assistant.name} />
+            {b.assistant.mobile ? <KV label="Mobile" value={b.assistant.mobile} /> : null}
+            {b.assistant.mobile ? <Button title="Call care assistant" icon="call-outline" variant="secondary" size="md" onPress={() => Linking.openURL(`tel:${b.assistant!.mobile}`)} style={{ marginTop: S.sm }} /> : null}
+          </Card>
+        </Section>
+      )}
+
+      <Section title="Patient">
+        <Card>
+          <KV label="Name" value={b.parentSnapshot.fullName} />
+          {b.parentSnapshot.mobile ? <KV label="Mobile" value={b.parentSnapshot.mobile} /> : null}
+          {auth.user?.email ? <KV label="Email" value={auth.user.email} /> : null}
+          <KV label="Address" value={[b.addressSnapshot.line1, b.addressSnapshot.line2, b.addressSnapshot.city, b.addressSnapshot.pincode].filter(Boolean).join(', ')} />
+        </Card>
+      </Section>
 
       <Section title="Details">
         <Card>

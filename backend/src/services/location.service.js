@@ -71,7 +71,7 @@ async function stopTracking(bookingId, assistantUserId) {
 
 /** Admin live map: active jobs + their latest positions. */
 async function activeForAdmin() {
-  const active = await Booking.find({ status: { $in: [S.ASSISTANT_ACCEPTED, S.ON_THE_WAY, S.REACHED, S.VISIT_STARTED] }, scheduledAt: { $gte: new Date(Date.now() - 12 * 3600000), $lte: new Date(Date.now() + 12 * 3600000) } })
+  const active = await Booking.find({ $or: [{ status: { $in: [S.ON_THE_WAY, S.REACHED, S.VISIT_STARTED] } }, { status: S.ASSISTANT_ACCEPTED, scheduledAt: { $gte: new Date(Date.now() - 12 * 3600000), $lte: new Date(Date.now() + 12 * 3600000) } }] })
     .select('bookingNumber status scheduledAt assistantId locationSnapshot addressSnapshot parentSnapshot.fullName serviceSnapshot.name')
     .populate('assistantId', 'name mobile')
     .lean();

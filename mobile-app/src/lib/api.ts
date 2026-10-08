@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-export const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.18:5000').replace(/\/$/, '');
+export const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.22:5000').replace(/\/$/, '');
 const BASE = `${API_URL}/api/v1`;
 const RT_KEY = 'parentcare.refresh_token'; // SecureStore key name only (not a secret)
 

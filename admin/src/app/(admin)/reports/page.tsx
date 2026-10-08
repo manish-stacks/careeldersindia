@@ -11,6 +11,7 @@ import type { OverallStatus } from '@/lib/types';
 import { DataTable, type Column } from '@/components/ui/table';
 import { Empty, ErrorState, PageHeader, Pagination, Panel, Tabs } from '@/components/ui/misc';
 import { Badge, OverallBadge } from '@/components/ui/status';
+import { PdfButton } from '@/components/reports/pdf-button';
 import { Button } from '@/components/ui/button';
 import { Input, Select } from '@/components/ui/form';
 
@@ -37,6 +38,7 @@ export default function ReportsPage() {
     { key: 'p', header: 'Parent', cell: (r) => <div><p className="font-medium">{r.data.patient.name}</p><p className="text-sm text-ink-muted">{r.data.patient.city}</p></div> },
     { key: 's', header: 'Visit', cell: (r) => <div><p>{r.serviceName}</p><p className="text-sm text-ink-muted">{dateTime(r.visitDate)}</p></div> },
     { key: 'n', header: 'Report', hideBelow: 'md', cell: (r) => <div><p>{r.reportNumber}{r.version > 1 && <span className="text-ink-muted"> v{r.version}</span>}</p><p className="text-sm text-ink-muted">by {r.data.assistant?.name} · PDF {humanize(r.pdf?.status)}</p></div> },
+    { key: 'dl', header: '', cell: (r) => <PdfButton reportId={r._id} /> },
     { key: 'st', header: 'Recorded status', cell: (r) => <div className="space-y-1"><OverallBadge status={r.overallStatus} />{r.followUpRequired && <div><Badge tone="warn">Follow-up</Badge></div>}</div> },
   ];
 

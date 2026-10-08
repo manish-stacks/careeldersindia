@@ -13,9 +13,10 @@ export type Contact = { name: string; relation?: string; mobile: string };
 
 export type VitalKey = 'bp' | 'pulse' | 'spo2' | 'temperature' | 'weight' | 'bloodSugar';
 export type ServiceFields = { vitals: { key: VitalKey; required: boolean }[]; collectSymptoms?: boolean; collectMedication?: boolean; collectMobility?: boolean; collectWellbeing?: boolean; minPhotos?: number };
-export type Service = { _id: string; name: string; slug: string; description?: string; basePrice: number; durationMinutes: number; recurringDiscountPercent: number; fields: ServiceFields };
+export type Service = { _id: string; name: string; slug: string; description?: string; basePrice: number; durationMinutes: number; recurringDiscountPercent: number; fields: ServiceFields; sheetKind?: 'NONE' | 'CHECKLIST' | 'TABLE'; items?: { key: string; label: string }[] };
 
 export type Parent = {
+  photoUrl?: string;
   _id: string; fullName: string; gender: 'MALE' | 'FEMALE' | 'OTHER'; dateOfBirth: string; age?: number; relationToOwner?: string; mobile?: string;
   address: Address; location?: { coordinates: [number, number] }; bloodGroup?: string; medicalConditions: string[]; medicines: Medicine[]; allergies: string[];
   emergencyContacts: Contact[]; specialInstructions?: string; lastVisitAt?: string; lastOverallStatus?: OverallStatus;
@@ -28,7 +29,7 @@ export type Parent = {
 export type Booking = {
   _id: string; bookingNumber: string; status: BookingStatus; scheduledAt: string; endsAt: string; scheduledLocal: { date: string; time: string }; durationMinutes: number;
   parentId: string; serviceId: string; recurringPlanId?: string; paymentStatus: string; price: { amount: number; discount?: number; currency: string };
-  addressSnapshot: Address; locationSnapshot?: { lat: number; lng: number }; parentSnapshot: { fullName: string }; serviceSnapshot: { name: string; durationMinutes: number };
+  addressSnapshot: Address; locationSnapshot?: { lat: number; lng: number }; parentSnapshot: { fullName: string; mobile?: string; gender?: string; bloodGroup?: string }; assistant?: { id: string; name: string; mobile?: string } | null; serviceSnapshot: { name: string; durationMinutes: number };
   assistant?: { id: string; name?: string } | null; customerNotes?: string; reportId?: string; visitId?: string;
   statusHistory?: { from: string | null; to: BookingStatus; at: string; note?: string }[];
   cancellation?: { role?: string; reason?: string; at?: string }; travel?: { startedAt?: string; reachedAt?: string }; createdAt: string;
@@ -36,6 +37,8 @@ export type Booking = {
 
 /** Booking as the assistant sees it */
 export type Job = {
+  reportId?: string;
+  customer?: { name: string; mobile?: string; email?: string };
   _id: string; bookingNumber: string; status: BookingStatus; scheduledAt: string; scheduledLocal: { date: string; time: string }; durationMinutes: number;
   service: { name: string; durationMinutes: number; fields?: ServiceFields }; address: Address; location?: { lat: number; lng: number };
   patient: { name: string; gender?: string; age?: number; bloodGroup?: string; medicalConditions?: string[]; allergies?: string[]; medicines?: Medicine[]; specialInstructions?: string; mobile?: string; emergencyContacts?: Contact[] };

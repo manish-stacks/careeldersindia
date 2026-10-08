@@ -10,6 +10,7 @@ import { C, S } from "@/lib/theme";
 import type { Booking, OverallStatus, ReportRow } from '@/lib/types';
 import { Button, Card, Empty, ErrorView, IconButton, Loading, Notice, Screen, Section, T } from '@/components/ui';
 import { BOOKING, OverallBadge, StatusBadge } from '@/components/status';
+import { NotifyPrompt } from '@/components/notify-prompt';
 
 type Home = {
   greetingName: string;
@@ -46,6 +47,37 @@ export default function CustomerHome() {
 
       <View style={{ paddingHorizontal: S.lg }}>
         {!connected && <T v="caption" style={{ marginBottom: S.sm }}>Offline: updates will appear when you reconnect.</T>}
+        <NotifyPrompt />
+
+        <View style={styles.stats}>
+          {[
+            { n: h.parents.length, l: 'Parents', icon: 'heart-outline' as const },
+            { n: h.upcoming.length, l: 'Upcoming', icon: 'calendar-outline' as const },
+            { n: h.recentReports.length, l: 'Reports', icon: 'document-text-outline' as const },
+          ].map((s) => (
+            <View key={s.l} style={styles.stat}>
+              <Ionicons name={s.icon} size={20} color={C.brand} />
+              <T v="title">{s.n}</T>
+              <T v="caption">{s.l}</T>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.actions}>
+          {[
+            { l: 'Book visit', icon: 'add-circle' as const, go: '/book' },
+            { l: 'Reports', icon: 'document-text' as const, go: '/reports' },
+            { l: 'Parents', icon: 'people' as const, go: '/parents' },
+            { l: 'Help', icon: 'warning' as const, go: '/sos' },
+          ].map((a) => (
+            <Pressable key={a.l} onPress={() => router.push(a.go as never)} style={styles.action} accessibilityRole="button" accessibilityLabel={a.l}>
+              <View style={[styles.actionIcon, a.l === 'Help' && { backgroundColor: C.dangerSoft }]}>
+                <Ionicons name={a.icon} size={24} color={a.l === 'Help' ? C.danger : C.brand} />
+              </View>
+              <T v="caption" color={C.ink}>{a.l}</T>
+            </Pressable>
+          ))}
+        </View>
 
         {live && (
           <Card onPress={() => router.push(`/booking/${live._id}`)} style={styles.live}>
@@ -159,6 +191,11 @@ export default function CustomerHome() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: S.sm, paddingHorizontal: S.lg, paddingBottom: S.lg },
+  stats: { flexDirection: 'row', gap: S.sm, marginBottom: S.md },
+  stat: { flex: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.line, padding: S.md, alignItems: 'center', gap: 2 },
+  actions: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: S.md },
+  action: { alignItems: 'center', gap: 6, width: '23%' },
+  actionIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center' },
   live: { backgroundColor: C.brand, borderColor: C.brand, marginBottom: S.md },
   pulse: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fff' },
   parent: { flexDirection: 'row', alignItems: 'center', gap: S.md },

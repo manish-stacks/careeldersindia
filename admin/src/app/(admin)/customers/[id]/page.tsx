@@ -1,9 +1,10 @@
 'use client';
 import { useState } from 'react';
+import { AssignDialog } from '@/components/bookings/assign-dialog';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { BadgeCheck, Pencil, Trash2 } from 'lucide-react';
+import { BadgeCheck, Pencil, Trash2, UserCog } from 'lucide-react';
 import { get, getPaged, post } from '@/lib/api';
 import { useAction, useDebounced } from '@/lib/hooks';
 import { age, dateOnly, dateTime, humanize, inr, toQuery } from '@/lib/utils';
@@ -41,6 +42,7 @@ export default function CustomerPage() {
   const { id } = useParams<{ id: string }>();
   const q = useQuery({ queryKey: ['customer', id], queryFn: () => get<Detail>(`/admin/customers/${id}`) });
   const [addParent, setAddParent] = useState(false);
+  const [assignB, setAssignB] = useState<{ _id: string; current?: string } | null>(null);
   const [newPlan, setNewPlan] = useState(false);
   const [editParent, setEditParent] = useState<ParentRow | null>(null);
   const [delParent, setDelParent] = useState<ParentRow | null>(null);
@@ -59,7 +61,7 @@ export default function CustomerPage() {
   const [rPage, setRPage] = useState(1);
   const [pPage, setPPage] = useState(1);
   const search = useDebounced(bq);
-  const bParams = { customerId: id, parentId, status, from, to, q: search, page: bPage, limit: 8 };
+  const bParams = { customerId: id, parentId, status, from, to, q: search, sort: 'oldest', page: bPage, limit: 8 };
   const bookings = useQuery({ queryKey: ['customer-bookings', bParams], queryFn: () => getPaged<BookingRow>(`/admin/bookings${toQuery(bParams)}`), placeholderData: keepPreviousData });
   const rParams = { customerId: id, parentId, from, to, page: rPage, limit: 5 };
   const reports = useQuery({ queryKey: ['customer-reports', rParams], queryFn: () => getPaged<ReportRow>(`/admin/reports${toQuery(rParams)}`), placeholderData: keepPreviousData });
@@ -155,11 +157,13 @@ export default function CustomerPage() {
                       <span className="min-w-0">
                         <span className="font-medium">{b.parentSnapshot.fullName}</span> <span className="text-ink-muted">· {b.serviceSnapshot.name}</span>
                         <span className="block text-sm text-ink-muted">{b.bookingNumber} · {dateTime(b.scheduledAt)}</span>
+                        <span className="block text-sm text-ink-muted">Assistant: {(b as unknown as { assistantId?: { name?: string } }).assistantId?.name || 'Not assigned'}</span>
                       </span>
                       <BookingBadge status={b.status} />
                     </Link>
                     <span className="mr-4 flex shrink-0 gap-2">
                       {b.status === 'PENDING_ADMIN_VERIFICATION' && <Button size="sm" loading={verify.isPending && verify.variables === b._id} onClick={() => verify.mutate(b._id)}><BadgeCheck className="h-4 w-4" />Verify</Button>}
+                      {ASSIGNABLE.includes(b.status) && <Button size="sm" variant="secondary" onClick={() => setAssignB({ _id: b._id, current: (b as unknown as { assistantId?: { _id?: string } }).assistantId?._id })}><UserCog className="h-4 w-4" />{(b as unknown as { assistantId?: unknown }).assistantId ? 'Reassign' : 'Assign'}</Button>}
                       {CANCELLABLE.includes(b.status) && <Button size="sm" variant="danger" onClick={() => setCancelB({ _id: b._id, bookingNumber: b.bookingNumber })}>Cancel</Button>}
                     </span>
                   </li>
@@ -211,6 +215,7 @@ export default function CustomerPage() {
           </Panel>
         </div>
       </div>
+      {assignB && <AssignDialog bookingId={assignB._id} current={assignB.current} open onClose={() => { setAssignB(null); bookings.refetch(); }} />}
       {addParent && <AddParentDialog customerId={id} onClose={() => setAddParent(false)} />}
       {newPlan && <CreatePlanDialog customerId={id} parents={parents} onClose={() => setNewPlan(false)} />}
       {cancelB && <CancelBookingDialog booking={cancelB} onClose={() => setCancelB(null)} />}
@@ -222,3 +227,5 @@ export default function CustomerPage() {
     </>
   );
 }
+
+const ASSIGNABLE = ['VERIFIED', 'ASSISTANT_ASSIGNED', 'ASSISTANT_REJECTED', 'ASSISTANT_ACCEPTED'];

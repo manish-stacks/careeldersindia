@@ -65,7 +65,7 @@ async function assertNoParentClash(parentId, scheduledAt, endsAt, excludeId) {
 }
 
 /** One-time booking. Created in PENDING_PAYMENT; confirmed only by the payment webhook/verify. */
-async function createOneTime(user, { parentId, serviceId, date, time, customerNotes }, req) {
+async function createOneTime(user, { parentId, serviceId, itemKeys, date, time, customerNotes }, req) {
   const { parent } = await access.assertParentAccess(user, parentId, FAMILY_PERMISSIONS.BOOK);
   const service = await catalog.getById(serviceId);
   const timezone = parent.timezone || OPERATIONAL_TIMEZONE;
@@ -91,7 +91,7 @@ async function createOneTime(user, { parentId, serviceId, date, time, customerNo
     ],
     price: catalog.priceFor(service),
     customerNotes,
-    ...buildSnapshots(parent, service, await catalog.sheetSnapshots([{ serviceId: service._id }])),
+    ...buildSnapshots(parent, service, await catalog.sheetSnapshots([{ serviceId: service._id, itemKeys }])),
   });
   await audit({ actor: user, action: 'BOOKING_CREATED', entityType: 'Booking', entityId: booking._id, metadata: { bookingNumber: booking.bookingNumber }, req });
   return serializers.forCustomer(booking);
@@ -165,7 +165,7 @@ async function listForCustomer(user, query) {
   if (query.status) filter.status = query.status;
   const sort = query.scope === 'upcoming' ? { scheduledAt: 1 } : { scheduledAt: -1 };
   const [items, total] = await Promise.all([
-    Booking.find(filter).sort(sort).skip(skip).limit(limit).populate('assistantId', 'name'),
+    Booking.find(filter).sort(sort).skip(skip).limit(limit).populate('assistantId', 'name mobile'),
     Booking.countDocuments(filter),
   ]);
   return { items: items.map(serializers.forCustomer), meta: pageMeta({ page, limit }, total) };
@@ -173,7 +173,7 @@ async function listForCustomer(user, query) {
 
 async function getForUser(user, bookingId) {
   const booking = await access.assertBookingAccess(user, bookingId);
-  await booking.populate('assistantId', 'name');
+  await booking.populate('assistantId', 'name mobile');
   return serializers.forRole(user.role, booking);
 }
 
@@ -276,7 +276,7 @@ async function customerHome(user) {
     Booking.find({ parentId: { $in: parentIds }, status: { $nin: [...TERMINAL_STATUSES, S.DRAFT, S.PENDING_PAYMENT] }, endsAt: { $gte: new Date() } })
       .sort({ scheduledAt: 1 })
       .limit(5)
-      .populate('assistantId', 'name'),
+      .populate('assistantId', 'name mobile'),
     Booking.find({ customerId: user.id, status: S.PENDING_PAYMENT, scheduledAt: { $gte: new Date() } }).sort({ createdAt: -1 }).limit(5),
   ]);
   const { HealthReport } = require('../models');

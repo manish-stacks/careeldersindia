@@ -8,7 +8,7 @@ const plain = (doc) => (doc?.toJSON ? doc.toJSON() : { ...doc });
 
 function assistantPublic(user) {
   if (!user || !user.name) return user ? { id: user._id || user } : null;
-  return { id: user._id, name: user.name };
+  return { id: user._id, name: user.name, mobile: user.mobile };
 }
 
 function forCustomer(booking) {
@@ -35,6 +35,7 @@ function forAssistant(booking) {
     timezone: b.timezone,
     durationMinutes: b.durationMinutes,
     service: b.serviceSnapshot,
+    reportId: b.reportId,
     address: b.addressSnapshot,
     location: b.locationSnapshot,
     patient: {

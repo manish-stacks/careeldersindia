@@ -75,12 +75,14 @@ async function getVisit(user, bookingId) {
   const media = await Media.find({ _id: { $in: visit.mediaIds } }).lean();
   const result = { ...plain(visit), media: await mediaService.withUrls(media) };
   if (user.role === ROLES.ASSISTANT) {
+    // old bookings have no frozen sheets: fall back to the service's current sheet
+    const sheets = booking.serviceSnapshot?.sheets?.length ? booking.serviceSnapshot.sheets : await require('./catalog.service').sheetSnapshots([{ serviceId: booking.serviceId }]);
     result.form = {
       fields: booking.serviceSnapshot?.fields || {},
       symptomsList: booking.serviceSnapshot?.symptomsList || [],
       medicines: booking.parentSnapshot?.medicines || [],
       parentName: booking.parentSnapshot?.fullName,
-      reportTemplates: (booking.serviceSnapshot?.sheets || []).map((x) => ({ _id: String(x.serviceId), name: x.name, kind: x.kind, items: x.items })),
+      reportTemplates: sheets.map((x) => ({ _id: String(x.serviceId), name: x.name, kind: x.kind, items: x.items })),
     };
   }
   if (user.role !== ROLES.ADMIN) delete result.completionKey;
@@ -282,7 +284,34 @@ function getPath(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 }
 
+function reportValueOf(visit, { templateId, key, label }) {
+  const r = (visit.reports || []).find((x) => String(x.templateId) === String(templateId));
+  if (r?.kind === 'CHECKLIST') return (r.checked || []).includes(label) ? 'Done' : 'Not done';
+  return r?.values?.find((x) => x.key === key)?.value;
+}
+
+function applyReportValue(visit, { templateId, key, label, value }) {
+  let r = (visit.reports || []).find((x) => String(x.templateId) === String(templateId));
+  if (!r) throw ApiError.badRequest('That report sheet is not part of this visit', 'VALIDATION_ERROR');
+  if (r.kind === 'CHECKLIST') {
+    const done = String(value).toLowerCase() === 'done';
+    const rest = (r.checked || []).filter((x) => x !== label);
+    r.checked = done ? [...rest, label] : rest;
+    visit.markModified('reports');
+    return;
+  }
+  const row = r.values.find((x) => x.key === key);
+  if (row) row.value = value;
+  else r.values.push({ key, label, value });
+  visit.markModified('reports');
+}
+
 function validateCorrectionValue(field, newValue) {
+  if (field === 'reportValue') {
+    const { templateId, key, label, value } = newValue || {};
+    if (!templateId || !key || typeof value !== 'string' || value.length > 100) throw ApiError.badRequest('Enter a test and a value', 'VALIDATION_ERROR');
+    return { templateId: String(templateId), key: String(key), label: String(label || key), value: value.trim() };
+  }
   if (field.startsWith('measurements.')) {
     const key = field.split('.')[1];
     const r = validators.measurements.safeParse({ [key]: newValue });
@@ -307,8 +336,9 @@ async function requestCorrection(user, visitId, { field, newValue, reason }, req
   if (user.role === ROLES.ASSISTANT && String(visit.assistantId) !== user.id) throw ApiError.notFound('Visit not found', 'VISIT_NOT_FOUND');
   if (user.role === ROLES.CUSTOMER) await access.assertParentAccess(user, visit.parentId, FAMILY_PERMISSIONS.VIEW);
   const value = validateCorrectionValue(field, newValue);
-  if (visit.corrections.some((c) => c.field === field && c.status === 'REQUESTED')) throw ApiError.conflict('A correction for this field is already pending', 'CORRECTION_PENDING');
-  visit.corrections.push({ field, oldValue: getPath(plain(visit), field), newValue: value, reason, requestedBy: user.id, requestedAt: new Date(), status: 'REQUESTED' });
+  if (visit.corrections.some((c) => c.field === field && c.status === 'REQUESTED' && (field !== 'reportValue' || c.newValue?.key === value.key))) throw ApiError.conflict('A correction for this field is already pending', 'CORRECTION_PENDING');
+  const oldValue = field === 'reportValue' ? reportValueOf(visit, value) : getPath(plain(visit), field);
+  visit.corrections.push({ field, oldValue, newValue: value, reason, requestedBy: user.id, requestedAt: new Date(), status: 'REQUESTED' });
   await visit.save();
   const correction = visit.corrections[visit.corrections.length - 1];
   await audit({ actor: user, action: 'VISIT_CORRECTION_REQUESTED', entityType: 'HealthVisit', entityId: visit._id, metadata: { field, reason }, req });
@@ -337,8 +367,13 @@ async function reviewCorrection(admin, visitId, correctionId, { approve, note },
   if (correction.field === 'overallStatus' && correction.newValue === OVERALL_STATUS.URGENT_ATTENTION && !visit.urgent?.reason) {
     throw ApiError.unprocessable('Add urgent details before marking urgent', 'URGENT_DETAILS_REQUIRED');
   }
-  correction.oldValue = getPath(plain(visit), correction.field); // value at time of apply
-  visit.set(correction.field, correction.newValue);
+  if (correction.field === 'reportValue') {
+    correction.oldValue = reportValueOf(visit, correction.newValue);
+    applyReportValue(visit, correction.newValue);
+  } else {
+    correction.oldValue = getPath(plain(visit), correction.field); // value at time of apply
+    visit.set(correction.field, correction.newValue);
+  }
   correction.status = 'APPLIED';
   visit.version += 1;
   await visit.save();

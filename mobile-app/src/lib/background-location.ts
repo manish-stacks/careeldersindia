@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const TRIP_TASK = 'parentcare-trip-location';
 const TRIP_KEY = 'pc:trip';
 const QUEUE_KEY = 'pc:trip:queue';
-const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.18:5000').replace(/\/$/, ''); // same default as lib/api.ts
 
 export type Trip = { bookingId: string; token: string; expiresAt: string; patientName?: string };
 type Fix = { latitude: number; longitude: number; accuracy?: number; heading?: number; speed?: number; timestamp: number };

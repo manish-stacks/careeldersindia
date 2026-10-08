@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Eye, Trash2 } from 'lucide-react';
+import { lookupPincode } from '@/lib/pincode';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { del, get, getPaged, patch, post } from '@/lib/api';
@@ -78,15 +79,20 @@ export function ResetPasswordButton({ userId }: { userId: string }) {
 
 /** Add the person being cared for (e.g. "Mom") to a customer's account. */
 export function AddParentDialog({ customerId, onClose }: { customerId: string; onClose: () => void }) {
-  const [f, setF] = useState({ fullName: '', gender: 'FEMALE', dateOfBirth: '', relationToOwner: 'Mother', line1: '', city: '', state: '', pincode: '', ecName: '', ecMobile: '' });
+  const [f, setF] = useState({ fullName: '', gender: 'FEMALE', dateOfBirth: '', relationToOwner: 'Mother', mobile: '', line1: '', city: '', state: '', pincode: '', ecName: '', ecMobile: '' });
+  const setPin = async (v: string) => {
+    set('pincode', v);
+    const r = await lookupPincode(v.trim()); // fills city and state automatically
+    if (r) setF((s) => ({ ...s, pincode: v, city: r.city, state: r.state }));
+  };
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
   const body = {
-    fullName: f.fullName.trim(), gender: f.gender, dateOfBirth: f.dateOfBirth, relationToOwner: f.relationToOwner.trim() || undefined,
+    fullName: f.fullName.trim(), gender: f.gender, dateOfBirth: f.dateOfBirth, relationToOwner: f.relationToOwner.trim() || undefined, mobile: f.mobile.trim(),
     address: { line1: f.line1.trim(), city: f.city.trim(), state: f.state.trim(), pincode: f.pincode.trim() },
     emergencyContacts: [{ name: f.ecName.trim(), mobile: f.ecMobile.trim() }],
   };
   const save = useAction(() => post(`/admin/customers/${customerId}/parents`, body), { success: 'Parent added', invalidate: [['customer', customerId]], onDone: onClose });
-  const valid = body.fullName.length >= 2 && f.dateOfBirth && body.address.line1.length >= 3 && body.address.city && body.address.state && body.address.pincode && body.emergencyContacts[0].name.length >= 2 && body.emergencyContacts[0].mobile;
+  const valid = body.fullName.length >= 2 && f.dateOfBirth && body.address.line1.length >= 3 && body.address.city && body.address.state && body.address.pincode && body.mobile.length >= 8 && body.emergencyContacts[0].name.length >= 2 && body.emergencyContacts[0].mobile;
   return (
     <Dialog open onClose={onClose} wide title="Add parent / patient" description="The home address is where the assistant will visit."
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={!valid}>Add</Button></>}>
@@ -95,11 +101,11 @@ export function AddParentDialog({ customerId, onClose }: { customerId: string; o
         <Field label="Relation to customer"><Input value={f.relationToOwner} onChange={(e) => set('relationToOwner', e.target.value)} /></Field>
         <Field label="Gender"><Select value={f.gender} onChange={(e) => set('gender', e.target.value)}><option value="FEMALE">Female</option><option value="MALE">Male</option><option value="OTHER">Other</option></Select></Field>
         <Field label="Date of birth"><Input type="date" value={f.dateOfBirth} onChange={(e) => set('dateOfBirth', e.target.value)} /></Field>
+        <Field label="Patient mobile" hint="The assistant calls this number."><Input value={f.mobile} onChange={(e) => set('mobile', e.target.value)} placeholder="+91…" /></Field>
+        <Field label="PIN code" hint="City and state fill in automatically."><Input value={f.pincode} onChange={(e) => setPin(e.target.value)} maxLength={6} inputMode="numeric" /></Field>
         <Field label="Address" className="sm:col-span-2"><Input value={f.line1} onChange={(e) => set('line1', e.target.value)} /></Field>
         <Field label="City"><Input value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
         <Field label="State"><Input value={f.state} onChange={(e) => set('state', e.target.value)} /></Field>
-        <Field label="PIN code"><Input value={f.pincode} onChange={(e) => set('pincode', e.target.value)} /></Field>
-        <span />
         <Field label="Emergency contact name"><Input value={f.ecName} onChange={(e) => set('ecName', e.target.value)} /></Field>
         <Field label="Emergency contact mobile"><Input value={f.ecMobile} onChange={(e) => set('ecMobile', e.target.value)} placeholder="+91…" /></Field>
       </div>
@@ -133,7 +139,7 @@ export function CreatePlanDialog({ customerId, parents, onClose }: { customerId:
         <Field label="Plan ends on"><Input type="date" min={f.startDate} value={f.endDate} onChange={(e) => set('endDate', e.target.value)} /></Field>
         <Field label="Visit frequency"><Select value={f.frequency} onChange={(e) => set('frequency', e.target.value)}>{FREQUENCIES.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</Select></Field>
         {f.frequency === 'CUSTOM' ? <Field label="Days between visits"><Input type="number" min={1} max={90} value={f.intervalDays} onChange={(e) => set('intervalDays', e.target.value)} /></Field> : <span />}
-        <Field label="Visit time (24h)"><Input value={f.time} onChange={(e) => set('time', e.target.value)} placeholder="09:00" /></Field>
+        <Field label="Visit time"><Input type="time" value={f.time} onChange={(e) => set('time', e.target.value)} /></Field>
         <p className="self-end rounded-lg bg-canvas px-4 py-2.5 text-sm"><b>{visits}</b> visit{visits === 1 ? '' : 's'} will be scheduled</p>
         <div className="sm:col-span-2">
           <p className="mb-1 text-sm font-semibold">Services for this client</p>

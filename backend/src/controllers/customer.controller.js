@@ -16,6 +16,7 @@ module.exports = {
 
   listParents: asyncHandler(async (req, res) => ok(res, await parentService.listForUser(req.user))),
   createParent: asyncHandler(async (req, res) => created(res, await parentService.create(req.user, req.body, req), 'Parent added')),
+  parentPhoto: asyncHandler(async (req, res) => ok(res, await parentService.setPhoto(req.user, req.params.id, req.file, req), 'Photo saved')),
   getParent: asyncHandler(async (req, res) => ok(res, await parentService.getDetails(req.user, req.params.id))),
   updateParent: asyncHandler(async (req, res) => ok(res, await parentService.update(req.user, req.params.id, req.body, req), 'Parent updated')),
   archiveParent: asyncHandler(async (req, res) => {

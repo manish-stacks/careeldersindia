@@ -14,7 +14,7 @@ import { C, F } from '@/lib/theme';
  * ON_THE_WAY (only if permission was already granted — never prompt on launch), stop stale ones.
  */
 function useResumeTrip(enabled: boolean) {
-  const q = useQuery({ queryKey: ['jobs', 'upcoming'], queryFn: () => api.page<Job>('/assistant/jobs?scope=upcoming&limit=50'), enabled });
+  const q = useQuery({ queryKey: ['jobs', 'resume-trip'], queryFn: () => api.page<Job>('/assistant/jobs?scope=upcoming&limit=50'), enabled });
   useEffect(() => {
     if (!q.data) return;
     (async () => {

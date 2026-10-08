@@ -87,7 +87,7 @@ const parent = {
 };
 
 const booking = {
-  create: z.object({ parentId: objectId, serviceId: objectId, date, time, customerNotes: z.string().trim().max(1000).optional() }),
+  create: z.object({ parentId: objectId, serviceId: objectId, itemKeys: z.array(z.string().max(60)).max(150).optional(), date, time, customerNotes: z.string().trim().max(1000).optional() }),
   list: pageQuery.extend({ scope: z.enum(['upcoming', 'past', 'all']).optional(), status: z.string().optional(), parentId: objectId.optional() }),
   cancel: z.object({ reason: z.string().trim().min(3).max(500) }),
   reschedule: z.object({ date, time, reason: z.string().trim().min(3).max(500) }),
@@ -97,6 +97,7 @@ const recurring = {
   create: z.object({
     parentId: objectId,
     serviceId: objectId,
+    itemKeys: z.array(z.string().max(60)).max(150).optional(),
     frequency: z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM']),
     intervalDays: z.number().int().min(1).max(90).optional(),
     startDate: date,
@@ -128,6 +129,7 @@ const assistant = {
     panNumber: z.string().trim().toUpperCase().regex(/^[A-Z]{5}\d{4}[A-Z]$/).optional(),
   }),
   availability: z.object({ isAvailable: z.boolean().optional(), workingHours: workingHours.optional() }),
+  acceptMany: z.object({ ids: z.array(objectId).min(1).max(50) }),
   document: z.object({ type: z.enum(['GOV_ID', 'PAN', 'QUALIFICATION', 'PROFILE_PHOTO', 'OTHER']), documentNumber: z.string().trim().min(4).max(40) }),
   jobs: pageQuery.extend({ scope: z.enum(['today', 'upcoming', 'history', 'new']).default('upcoming') }),
   reject: z.object({ reason: z.string().trim().min(3).max(500) }),

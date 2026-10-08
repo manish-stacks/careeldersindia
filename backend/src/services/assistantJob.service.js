@@ -1,5 +1,5 @@
 /** Assistant-side job lifecycle: accept → travel → reached → start visit (→ complete in healthVisit.service). */
-const { Booking, HealthVisit } = require('../models');
+const { Booking, HealthVisit, Parent, User } = require('../models');
 const { ApiError } = require('../utils/ApiError');
 const { formatLocal } = require('../utils/time');
 const { BOOKING_STATUS: S, ASSISTANT_BUSY_STATUSES } = require('../config/constants');
@@ -33,7 +33,17 @@ function setHistoryOutcome(booking, outcome, reason) {
 }
 
 async function getJob(user, bookingId) {
-  return serializers.forAssistant(await loadAssigned(user, bookingId));
+  const booking = await loadAssigned(user, bookingId);
+  const job = serializers.forAssistant(booking);
+  // The patient's and the customer's live contact details, so the assistant can call before the visit.
+  const [parent, customer] = await Promise.all([
+    Parent.findById(booking.parentId).select('mobile emergencyContacts').lean(),
+    User.findById(booking.customerId).select('name mobile email').lean(),
+  ]);
+  job.patient.mobile = parent?.mobile || job.patient.mobile;
+  job.patient.emergencyContacts = job.patient.emergencyContacts || parent?.emergencyContacts;
+  job.customer = customer ? { name: customer.name, mobile: customer.mobile, email: customer.email } : undefined;
+  return job;
 }
 
 async function accept(user, bookingId, req) {

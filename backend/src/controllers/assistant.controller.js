@@ -20,6 +20,13 @@ module.exports = {
   getJob: asyncHandler(async (req, res) => ok(res, await jobService.getJob(req.user, req.params.id))),
   accept: asyncHandler(async (req, res) => ok(res, await jobService.accept(req.user, req.params.id, req), 'Job accepted')),
   reject: asyncHandler(async (req, res) => ok(res, await jobService.reject(req.user, req.params.id, req.body, req), 'Job rejected')),
+  acceptMany: asyncHandler(async (req, res) => {
+    const results = [];
+    for (const id of req.body.ids) {
+      try { await jobService.accept(req.user, id, req); results.push({ id, ok: true }); } catch (e) { results.push({ id, ok: false, message: e.message }); }
+    }
+    ok(res, { results, accepted: results.filter((r) => r.ok).length }, 'Done');
+  }),
   startTravel: asyncHandler(async (req, res) => ok(res, await jobService.startTravel(req.user, req.params.id, req), 'Travel started')),
   reached: asyncHandler(async (req, res) => ok(res, await jobService.markReached(req.user, req.params.id, req.body, req), 'Marked as reached')),
   startVisit: asyncHandler(async (req, res) => ok(res, await jobService.startVisit(req.user, req.params.id, req), 'Visit started')),

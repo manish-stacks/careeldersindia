@@ -65,6 +65,8 @@ async function notify({ userIds, type, title, body, data = {}, push = true, pers
     });
   });
 
+  require('./email.service').sendEventEmail(ids, { title, body }); // e-mail for every event (no-op without SMTP)
+
   if (push) {
     const job = { userIds: ids, title, body, data: { ...data, type } };
     const queued = await enqueue(QUEUE_NAMES.PUSH, 'send', job).catch((err) => {

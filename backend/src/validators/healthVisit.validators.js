@@ -97,6 +97,7 @@ const correction = z.object({
     'overallStatus',
     'followUpRequired',
     'followUpNotes',
+    'reportValue',
   ]),
   newValue: z.any(),
   reason: z.string().trim().min(5).max(500),

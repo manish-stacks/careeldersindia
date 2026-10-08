@@ -13,9 +13,10 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_BYTES, files: 1 },
   fileFilter: (_req, file, cb) => {
+    // Browsers/phones send odd MIME values (image/jpg, octet-stream); the real type is checked by magic bytes below.
     const ext = (file.originalname.split('.').pop() || '').toLowerCase();
-    const allowedExt = ALLOWED[file.mimetype];
-    if (!allowedExt || !allowedExt.includes(ext)) return cb(ApiError.badRequest('Only JPG, PNG, WEBP or PDF files are allowed', 'INVALID_FILE_TYPE'));
+    const okExt = Object.values(ALLOWED).some((list) => list.includes(ext));
+    if (!okExt) return cb(ApiError.badRequest('Only JPG, PNG, WEBP or PDF files are allowed', 'INVALID_FILE_TYPE'));
     return cb(null, true);
   },
 });
@@ -33,7 +34,8 @@ function sniffMime(buf) {
 const verifyFileContent = (req, _res, next) => {
   if (!req.file) return next(ApiError.badRequest('File is required', 'FILE_REQUIRED'));
   const real = sniffMime(req.file.buffer);
-  if (!real || real !== req.file.mimetype) return next(ApiError.badRequest('File content does not match its type', 'INVALID_FILE_CONTENT'));
+  if (!real) return next(ApiError.badRequest('Only JPG, PNG, WEBP or PDF files are allowed', 'INVALID_FILE_CONTENT'));
+  req.file.mimetype = real;
   return next();
 };
 

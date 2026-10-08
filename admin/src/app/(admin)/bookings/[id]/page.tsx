@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { PdfButton } from '@/components/reports/pdf-button';
 import { CalendarClock, CheckCircle2, FileText, MapPin, Phone, UserCog, XCircle, Repeat, Navigation } from 'lucide-react';
 import { get, post, patch } from '@/lib/api';
 import { useAction } from '@/lib/hooks';
@@ -120,7 +121,7 @@ export default function BookingDetailPage() {
             </Panel>
           )}
 
-          <Panel title="Visit record">
+          <Panel title="Visit record" action={b.reportId && visit?.status === 'COMPLETED' ? <PdfButton reportId={b.reportId} /> : undefined}>
             {visit ? <VisitRecord visit={visit} /> : <p className="text-ink-muted">The assistant hasn&apos;t started this visit yet.</p>}
           </Panel>
 
@@ -149,8 +150,8 @@ export default function BookingDetailPage() {
             <ol className="relative ml-2 border-l border-line">
               {[...(b.statusHistory || [])].reverse().map((h, i) => (
                 <li key={i} className="relative pb-4 pl-6 last:pb-0">
-                  <span className={cn('absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full', i === 0 ? 'bg-brand' : 'bg-line-strong')} />
-                  <p className={cn('text-[15px]', i === 0 && 'font-semibold')}>{bookingLabel(h.to as never)}</p>
+                  <span className={cn('absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full', DONE_STATES.includes(h.to) ? 'bg-[#16a34a]' : i === 0 ? 'bg-brand' : 'bg-line-strong')} />
+                  <p className={cn('text-[15px]', i === 0 && 'font-semibold', DONE_STATES.includes(h.to) && 'font-semibold text-[#15803d]')}>{bookingLabel(h.to as never)}</p>
                   <p className="text-sm text-ink-muted">
                     {dateTime(h.at)} · {h.actorId?.name || humanize(h.actorRole)}
                     {h.note ? ` · “${h.note}”` : ''}
@@ -409,3 +410,6 @@ function RescheduleDialog({ booking, onClose }: { booking: Booking; onClose: () 
     </Dialog>
   );
 }
+
+
+const DONE_STATES: string[] = ['VISIT_COMPLETED', 'REPORT_GENERATED', 'COMPLETED'];

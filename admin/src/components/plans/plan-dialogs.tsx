@@ -1,12 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getPaged, patch, post, put } from '@/lib/api';
+import { get, getPaged, patch, post, put } from '@/lib/api';
 import { useAction, todayIST } from '@/lib/hooks';
 import { dateOnly, inr } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
-import { Field, Input, Select, Textarea } from '@/components/ui/form';
+import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/form';
 import { FREQUENCIES, PAY_METHODS, addDays, countVisits, type Plan } from './shared';
 
 type Opt = { _id: string; name: string };
@@ -34,13 +34,30 @@ export function EditPlanDialog({ plan, onClose }: { plan: Plan; onClose: () => v
     assistantId: plan.preferredAssistantId || '', price: String(Math.round(plan.pricePerVisit / 100)), notes: plan.notes || '',
   });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
+  type Svc = Opt & { items?: { key: string; label: string }[] };
+  const services = useQuery({ queryKey: ['services'], queryFn: () => get<Svc[]>('/admin/services') });
+  const [picked, setPicked] = useState<Record<string, string[]>>(Object.fromEntries((plan.sheets || []).map((x) => [String(x.serviceId), x.itemKeys || []])));
+  const [touched, setTouched] = useState(false);
+  useEffect(() => {
+    // older plans have no saved tests: start with every test of the plan's service ticked
+    if (!plan.sheets?.length && plan.serviceId?._id && services.data) {
+      const s = services.data.find((x) => x._id === plan.serviceId?._id);
+      if (s) setPicked({ [s._id]: (s.items || []).map((i) => i.key) });
+    }
+  }, [services.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const change = (fn: (p: Record<string, string[]>) => Record<string, string[]>) => { setTouched(true); setPicked(fn); };
+  const toggleService = (s: Svc) => change((p) => { const n = { ...p }; if (n[s._id]) delete n[s._id]; else n[s._id] = (s.items || []).map((i) => i.key); return n; });
+  const toggleItem = (id: string, key: string) => change((p) => ({ ...p, [id]: p[id].includes(key) ? p[id].filter((k) => k !== key) : [...p[id], key] }));
+  const sheets = Object.entries(picked).map(([serviceId, itemKeys]) => ({ serviceId, itemKeys }));
+  const sheetsOk = sheets.length > 0 && sheets.every((x) => x.itemKeys.length > 0 || !services.data?.find((s) => s._id === x.serviceId)?.items?.length);
   const preview = countVisits(f.fromDate, f.endDate, f.frequency, Number(f.intervalDays));
   const body = {
     frequency: f.frequency, intervalDays: f.frequency === 'CUSTOM' ? Number(f.intervalDays) : undefined, time: f.time, fromDate: f.fromDate, endDate: f.endDate || undefined,
     assistantId: f.assistantId || null, pricePerVisit: Math.round(Number(f.price) * 100), notes: f.notes,
+    sheets: touched ? sheets : undefined,
   };
   const save = useAction(() => patch(`/admin/recurring-plans/${plan._id}`, body), { success: 'Plan updated — upcoming visits rebuilt', invalidate: INV((typeof plan.customerId === 'object' ? plan.customerId?._id : undefined), plan._id), onDone: onClose });
-  const valid = /^\d{2}:\d{2}$/.test(f.time) && f.fromDate && f.endDate >= f.fromDate && Number(f.price) >= 0;
+  const valid = /^\d{2}:\d{2}$/.test(f.time) && f.fromDate && f.endDate >= f.fromDate && Number(f.price) >= 0 && (!touched || sheetsOk);
   return (
     <Dialog open onClose={onClose} wide title={`Modify ${plan.planNumber}`} description="Visits that already started or finished are never changed. Upcoming, not-yet-started visits from the change date are rebuilt on the new schedule."
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={!valid}>Save changes</Button></>}>
@@ -48,9 +65,29 @@ export function EditPlanDialog({ plan, onClose }: { plan: Plan; onClose: () => v
         <FrequencyFields f={f} set={set} />
         <Field label="New schedule starts on" hint="Earliest: tomorrow"><Input type="date" min={tomorrow} value={f.fromDate} onChange={(e) => set('fromDate', e.target.value)} /></Field>
         <Field label="Plan ends on" hint={plan.endDate ? `Currently ends ${dateOnly(plan.endDate)}` : undefined}><Input type="date" min={f.fromDate} value={f.endDate} onChange={(e) => set('endDate', e.target.value)} /></Field>
-        <Field label="Visit time (24h)"><Input value={f.time} onChange={(e) => set('time', e.target.value)} placeholder="09:00" /></Field>
+        <Field label="Visit time"><Input type="time" value={f.time} onChange={(e) => set('time', e.target.value)} /></Field>
         <Field label="Price per visit (₹)"><Input type="number" min={0} value={f.price} onChange={(e) => set('price', e.target.value)} /></Field>
         <Field label="Assistant for all visits" className="sm:col-span-2"><AssistantSelect value={f.assistantId} onChange={(v) => set('assistantId', v)} none="No fixed assistant" /></Field>
+        <div className="sm:col-span-2">
+          <p className="mb-1 text-sm font-semibold">Services and tests</p>
+          <p className="mb-2 text-sm text-ink-muted">Changes apply to upcoming visits only. The assistant sees only the ticked tests.</p>
+          <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
+            {(services.data || []).map((s) => (
+              <div key={s._id} className="rounded-lg border border-line p-3">
+                <Checkbox label={s.name} checked={!!picked[s._id]} onChange={() => toggleService(s)} />
+                {picked[s._id] && !!s.items?.length && (
+                  <div className="mt-2 grid gap-x-4 gap-y-1 pl-6 sm:grid-cols-2">
+                    <div className="flex gap-3 text-sm sm:col-span-2">
+                      <button type="button" className="text-brand underline" onClick={() => change((p) => ({ ...p, [s._id]: s.items!.map((i) => i.key) }))}>Select all</button>
+                      <button type="button" className="text-brand underline" onClick={() => change((p) => ({ ...p, [s._id]: [] }))}>Clear</button>
+                    </div>
+                    {s.items.map((i) => <Checkbox key={i.key} label={i.label} checked={picked[s._id].includes(i.key)} onChange={() => toggleItem(s._id, i.key)} />)}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
         <Field label="Notes" className="sm:col-span-2"><Textarea value={f.notes} onChange={(e) => set('notes', e.target.value)} /></Field>
         <p className="sm:col-span-2 rounded-lg bg-canvas px-4 py-3 text-sm">From {f.fromDate ? dateOnly(f.fromDate) : '—'} to {f.endDate ? dateOnly(f.endDate) : '—'}: <b>{preview}</b> new visit{preview === 1 ? '' : 's'} will be scheduled.</p>
       </div>

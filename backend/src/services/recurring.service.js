@@ -64,6 +64,7 @@ async function createPlan(user, input, req) {
     customerId: user.id,
     parentId: parent._id,
     serviceId: service._id,
+    sheets: input.itemKeys?.length ? [{ serviceId: service._id, itemKeys: input.itemKeys }] : undefined,
     frequency: input.frequency,
     intervalDays: input.frequency === 'CUSTOM' ? input.intervalDays : undefined,
     startDate: input.startDate,
@@ -361,6 +362,19 @@ async function adminUpdatePlan(admin, planId, input, req) {
  * Renew = a new plan that continues straight after the old one.
  * Customer: created as PENDING_PAYMENT (they pay in the app). Admin: active immediately (offline payment).
  */
+/** Admin-created/renewed plans are prepaid offline: record that payment so the customer's paid total is right. */
+async function recordPrepaid(plan, admin) {
+  const { Payment } = require('../models');
+  const payment = await Payment.create({
+    receiptNumber: await nextNumber('RCPT'), customerId: plan.customerId, purpose: 'RECURRING_PLAN', recurringPlanId: plan._id,
+    amount: plan.totalAmount, currency: plan.currency, status: 'CAPTURED', method: 'OFFLINE', manual: true,
+    note: 'Prepaid — plan set up by admin', updatedByAdmin: admin.id, capturedAt: new Date(),
+  });
+  plan.paymentId = payment._id;
+  await plan.save();
+  return payment;
+}
+
 async function renewPlan(user, planId, input = {}, req) {
   const old = await RecurringPlan.findById(planId);
   if (!old) throw ApiError.notFound('Plan not found', 'PLAN_NOT_FOUND');
@@ -402,10 +416,11 @@ async function renewPlan(user, planId, input = {}, req) {
   await plan.save();
   await audit({ actor: user, action: 'RECURRING_PLAN_RENEWED', entityType: 'RecurringPlan', entityId: plan._id, metadata: { from: old.planNumber }, req });
   if (isAdmin) {
+    await recordPrepaid(plan, user);
     await notifications.notify({ userIds: plan.customerId, type: notifications.TYPES.BOOKING_CONFIRMED, title: 'Care plan renewed', body: `Plan ${plan.planNumber} is active from ${startDate} to ${plan.endDate}.`, data: { recurringPlanId: String(plan._id) } }).catch(() => {});
     await generateForPlan(plan);
   }
   return { plan: await RecurringPlan.findById(plan._id), existing: false };
 }
 
-module.exports = { adminUpdatePlan, renewPlan, countVisits, localDate, expiringForCustomer, sendExpiryAlerts, occurrenceAt, previewSchedule, createPlan, activateAfterPayment, generateForPlan, generateAllDue, list, get, setPaused, cancelPlan };
+module.exports = { recordPrepaid, adminUpdatePlan, renewPlan, countVisits, localDate, expiringForCustomer, sendExpiryAlerts, occurrenceAt, previewSchedule, createPlan, activateAfterPayment, generateForPlan, generateAllDue, list, get, setPaused, cancelPlan };

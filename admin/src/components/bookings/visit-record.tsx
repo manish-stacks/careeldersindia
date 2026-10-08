@@ -1,14 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { PencilLine, ImageIcon } from 'lucide-react';
-import { post } from '@/lib/api';
+import { get, post } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 import { useAction } from '@/lib/hooks';
 import { dateTime, humanize } from '@/lib/utils';
 import type { Measurements, Visit } from '@/lib/types';
 import { Badge, OverallBadge } from '@/components/ui/status';
 import { Button } from '@/components/ui/button';
-import { Dialog } from '@/components/ui/dialog';
-import { Field, Input, Select, Textarea } from '@/components/ui/form';
+import { Field, Input, Textarea } from '@/components/ui/form';
 
 export function vitalsRows(m: Measurements = {}) {
   const rows: [string, string][] = [];
@@ -25,6 +25,22 @@ const MED_TONE: Record<string, 'ok' | 'danger' | 'neutral'> = { TAKEN: 'ok', MIS
 
 export function VisitRecord({ visit }: { visit: Visit }) {
   const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [reason, setReason] = useState('');
+  const svc = useQuery({ queryKey: ['services'], queryFn: () => get<{ _id: string; items?: { key: string; label: string }[] }[]>('/admin/services'), enabled: editing });
+  const setD = (k: string, v: string) => setDraft((d) => ({ ...d, [k]: v }));
+  // every test of each sheet, also the ones the assistant left empty
+  const itemsOf = (r: NonNullable<Visit['reports']>[number]) => svc.data?.find((s) => s._id === r.templateId)?.items || (r.values || []).map((x) => ({ key: x.key, label: x.label }));
+  const current = (r: NonNullable<Visit['reports']>[number], i: { key: string; label: string }) => (r.kind === 'CHECKLIST' ? ((r.checked || []).includes(i.label) ? 'Done' : 'Not done') : (r.values || []).find((x) => x.key === i.key)?.value || '');
+  const changes = [
+    ...(visit.reports || []).flatMap((r) => itemsOf(r).map((i) => ({ k: `t:${r.templateId}:${i.key}`, field: 'reportValue', newValue: { templateId: r.templateId, key: i.key, label: i.label, value: (draft[`t:${r.templateId}:${i.key}`] ?? '').trim() }, same: draft[`t:${r.templateId}:${i.key}`] === undefined || draft[`t:${r.templateId}:${i.key}`].trim() === current(r, i) }))),
+    { k: 'notes', field: 'notes', newValue: draft.notes, same: draft.notes === undefined || draft.notes === (visit.notes || '') },
+    { k: 'pulse', field: 'measurements.pulse', newValue: Number(draft.pulse), same: !draft.pulse || Number(draft.pulse) === visit.measurements?.pulse },
+    { k: 'spo2', field: 'measurements.spo2', newValue: Number(draft.spo2), same: !draft.spo2 || Number(draft.spo2) === visit.measurements?.spo2 },
+  ].filter((c) => !c.same);
+  const save = useAction(async () => { for (const c of changes) await post(`/admin/health-visits/${visit._id}/correct`, { field: c.field, newValue: c.newValue, reason: reason.trim() }); }, {
+    success: 'Saved — a new report version was issued and the family notified', invalidate: [['booking'], ['reports']], onDone: () => { setEditing(false); setDraft({}); setReason(''); },
+  });
   const rows = vitalsRows(visit.measurements);
   const pending = visit.corrections?.filter((c) => c.status === 'REQUESTED') || [];
   return (
@@ -33,9 +49,9 @@ export function VisitRecord({ visit }: { visit: Visit }) {
         <OverallBadge status={visit.overallStatus} />
         {visit.status === 'IN_PROGRESS' ? <Badge tone="brand" dot>Being recorded now</Badge> : <span className="text-sm text-ink-muted">Completed {dateTime(visit.completedAt)}</span>}
         {visit.version > 1 && <Badge tone="info">Corrected · v{visit.version}</Badge>}
-        {visit.status === 'COMPLETED' && (
-          <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setEditing(true)}>
-            <PencilLine className="h-4 w-4" /> Correct a value
+        {visit.status === 'COMPLETED' && !editing && (
+          <Button variant="secondary" size="sm" className="ml-auto" onClick={() => setEditing(true)}>
+            <PencilLine className="h-4 w-4" /> Edit results
           </Button>
         )}
       </div>
@@ -50,7 +66,12 @@ export function VisitRecord({ visit }: { visit: Visit }) {
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-ink-soft">Recorded measurements</h3>
-        {rows.length ? (
+        {editing ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Pulse (bpm)"><Input type="number" defaultValue={visit.measurements?.pulse ?? ''} onChange={(e) => setD('pulse', e.target.value)} /></Field>
+            <Field label="SpO₂ (%)"><Input type="number" defaultValue={visit.measurements?.spo2 ?? ''} onChange={(e) => setD('spo2', e.target.value)} /></Field>
+          </div>
+        ) : rows.length ? (
           <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {rows.map(([k, v]) => (
               <div key={k} className="rounded-lg bg-canvas px-3 py-2">
@@ -106,7 +127,21 @@ export function VisitRecord({ visit }: { visit: Visit }) {
       {visit.reports?.map((r) => (
         <div key={r.templateId}>
           <h3 className="mb-1.5 text-sm font-semibold text-ink-soft">{r.name}{r.reportDate ? ` · ${r.reportDate}` : ''}</h3>
-          {r.kind === 'CHECKLIST' ? (
+          {editing ? (
+            r.kind === 'CHECKLIST' ? (
+              <div className="flex flex-wrap gap-1.5">
+                {itemsOf(r).map((i) => {
+                  const k = `t:${r.templateId}:${i.key}`;
+                  const on = (draft[k] ?? current(r, i)) === 'Done';
+                  return <button key={i.key} type="button" onClick={() => setD(k, on ? 'Not done' : 'Done')} className={on ? 'rounded-full border border-[#16a34a] bg-[#dcfce7] px-3 py-1 text-sm text-[#15803d]' : 'rounded-full border border-line px-3 py-1 text-sm text-ink-muted'}>{on ? '✓ ' : ''}{i.label}</button>;
+                })}
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {itemsOf(r).map((i) => <Field key={i.key} label={i.label}><Input defaultValue={current(r, i)} onChange={(e) => setD(`t:${r.templateId}:${i.key}`, e.target.value)} /></Field>)}
+              </div>
+            )
+          ) : r.kind === 'CHECKLIST' ? (
             <div className="flex flex-wrap gap-1.5">{r.checked?.length ? r.checked.map((c) => <Badge key={c} tone="ok">{c}</Badge>) : <span className="text-sm text-ink-muted">Nothing ticked</span>}</div>
           ) : (
             <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-[15px] sm:grid-cols-3">
@@ -116,7 +151,9 @@ export function VisitRecord({ visit }: { visit: Visit }) {
         </div>
       ))}
 
-      {visit.notes && (
+      {editing ? (
+        <Field label="Assistant observations"><Textarea defaultValue={visit.notes || ''} onChange={(e) => setD('notes', e.target.value)} /></Field>
+      ) : visit.notes && (
         <div>
           <h3 className="mb-1 text-sm font-semibold text-ink-soft">Assistant observations</h3>
           <p className="whitespace-pre-line text-[15px]">{visit.notes}</p>
@@ -153,125 +190,13 @@ export function VisitRecord({ visit }: { visit: Visit }) {
         </p>
       )}
       <p className="text-xs text-ink-faint">Recorded measurements and observations from a home visit. Not a medical diagnosis.</p>
-      {editing && <CorrectionDialog visit={visit} onClose={() => setEditing(false)} />}
+      {editing && (
+        <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-end gap-3 border-t border-line bg-white px-5 py-4">
+          <div className="min-w-[220px] flex-1"><Field label="Reason for the change" hint={changes.length ? `${changes.length} change${changes.length > 1 ? 's' : ''} · the original report is kept` : 'Edit any value above'}><Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Typing mistake by the assistant" /></Field></div>
+          <Button variant="secondary" onClick={() => { setEditing(false); setDraft({}); setReason(''); }}>Cancel</Button>
+          <Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={!changes.length || reason.trim().length < 5}>Save changes</Button>
+        </div>
+      )}
     </div>
-  );
-}
-
-const FIELDS = [
-  ['measurements.bp', 'Blood pressure'],
-  ['measurements.pulse', 'Pulse'],
-  ['measurements.spo2', 'SpO₂'],
-  ['measurements.temperature', 'Temperature'],
-  ['measurements.weight', 'Weight'],
-  ['measurements.bloodSugar', 'Blood sugar'],
-  ['overallStatus', 'Overall status'],
-  ['notes', 'Assistant observations'],
-  ['symptomNotes', 'Symptom notes'],
-  ['followUpRequired', 'Follow-up required'],
-  ['followUpNotes', 'Follow-up notes'],
-] as const;
-
-function CorrectionDialog({ visit, onClose }: { visit: Visit; onClose: () => void }) {
-  const [field, setField] = useState<string>('measurements.pulse');
-  const [a, setA] = useState('');
-  const [b, setB] = useState('');
-  const [unit, setUnit] = useState('F');
-  const [reason, setReason] = useState('');
-
-  const value = (() => {
-    switch (field) {
-      case 'measurements.bp':
-        return { systolic: Number(a), diastolic: Number(b) };
-      case 'measurements.pulse':
-      case 'measurements.spo2':
-        return Number(a);
-      case 'measurements.temperature':
-        return { value: Number(a), unit };
-      case 'measurements.weight':
-        return { value: Number(a), unit: 'KG' };
-      case 'measurements.bloodSugar':
-        return { value: Number(a), unit: 'mg/dL', context: b || 'RANDOM' };
-      case 'followUpRequired':
-        return a === 'true';
-      default:
-        return a;
-    }
-  })();
-
-  const save = useAction(() => post(`/admin/health-visits/${visit._id}/correct`, { field, newValue: value, reason }), {
-    success: 'Correction applied — a new report version was issued and the family notified',
-    invalidate: [['booking'], ['reports']],
-    onDone: onClose,
-  });
-
-  const numeric = ['measurements.pulse', 'measurements.spo2', 'measurements.weight', 'measurements.temperature', 'measurements.bloodSugar', 'measurements.bp'].includes(field);
-  return (
-    <Dialog
-      open
-      onClose={onClose}
-      title="Correct a recorded value"
-      description="The original report is kept. A new version is generated and the family is told it changed."
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={reason.trim().length < 5 || (numeric && !a)}>
-            Apply correction
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <Field label="Field">
-          <Select value={field} onChange={(e) => { setField(e.target.value); setA(''); setB(''); }}>
-            {FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </Select>
-        </Field>
-        {field === 'measurements.bp' && (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Systolic"><Input inputMode="numeric" value={a} onChange={(e) => setA(e.target.value)} /></Field>
-            <Field label="Diastolic"><Input inputMode="numeric" value={b} onChange={(e) => setB(e.target.value)} /></Field>
-          </div>
-        )}
-        {['measurements.pulse', 'measurements.spo2', 'measurements.weight'].includes(field) && (
-          <Field label="New value"><Input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} /></Field>
-        )}
-        {field === 'measurements.temperature' && (
-          <div className="grid grid-cols-[1fr_120px] gap-3">
-            <Field label="Temperature"><Input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} /></Field>
-            <Field label="Unit"><Select value={unit} onChange={(e) => setUnit(e.target.value)}><option value="F">°F</option><option value="C">°C</option></Select></Field>
-          </div>
-        )}
-        {field === 'measurements.bloodSugar' && (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="mg/dL"><Input inputMode="numeric" value={a} onChange={(e) => setA(e.target.value)} /></Field>
-            <Field label="Taken">
-              <Select value={b || 'RANDOM'} onChange={(e) => setB(e.target.value)}><option value="FASTING">Fasting</option><option value="RANDOM">Random</option><option value="POST_MEAL">After meal</option></Select>
-            </Field>
-          </div>
-        )}
-        {field === 'overallStatus' && (
-          <Field label="Overall status">
-            <Select value={a} onChange={(e) => setA(e.target.value)}>
-              <option value="">Choose…</option>
-              <option value="STABLE">Stable</option>
-              <option value="NEEDS_ATTENTION">Needs attention</option>
-              <option value="URGENT_ATTENTION">Urgent attention</option>
-            </Select>
-          </Field>
-        )}
-        {field === 'followUpRequired' && (
-          <Field label="Follow-up required">
-            <Select value={a} onChange={(e) => setA(e.target.value)}><option value="true">Yes</option><option value="false">No</option></Select>
-          </Field>
-        )}
-        {['notes', 'symptomNotes', 'followUpNotes'].includes(field) && (
-          <Field label="New text"><Textarea value={a} onChange={(e) => setA(e.target.value)} /></Field>
-        )}
-        <Field label="Reason for correction" hint="Visible in the audit log.">
-          <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Assistant confirmed pulse was 76, typed 67" />
-        </Field>
-      </div>
-    </Dialog>
   );
 }

@@ -49,6 +49,7 @@ export default function VisitForm() {
   const [notes, setNotes] = useState('');
   const [reportMode, setReportMode] = useState<'FORM' | 'IMAGE'>('FORM');
   const [sheets, setSheets] = useState<Record<string, { date?: string; checked: string[]; vals: Record<string, string> }>>({});
+  const [testQ, setTestQ] = useState('');
   const sheet = (id: string) => sheets[id] || { checked: [], vals: {} };
   const patchSheet = (id: string, p: Partial<{ date: string; checked: string[]; vals: Record<string, string> }>) => setSheets((x) => ({ ...x, [id]: { ...(x[id] || { checked: [], vals: {} }), ...p } }));
   const [overall, setOverall] = useState<Visit['overallStatus']>();
@@ -365,13 +366,22 @@ export default function VisitForm() {
 
       {templates.map((t) => {
         const sh = sheet(t._id);
+        const q = testQ.trim().toLowerCase();
+        const shown = t.items.filter((i) => !q || i.label.toLowerCase().includes(q));
+        const filled = t.kind === 'CHECKLIST' ? sh.checked.length : t.items.filter((i) => sh.vals[i.key]?.trim()).length;
         const firstTable = t.kind === 'TABLE' && templates.find((x) => x.kind === 'TABLE')?._id === t._id;
         return (
           <Section key={t._id} title={t.name}>
+            {t.items.length > 6 && (
+              <View style={{ marginBottom: S.md }}>
+                <Input value={testQ} onChangeText={setTestQ} placeholder="Search tests" autoCorrect={false} />
+                <T v="caption" style={{ marginTop: 4 }}>{filled} of {t.items.length} {t.kind === 'CHECKLIST' ? 'done' : 'filled'}{q ? ` · ${shown.length} match` : ''}</T>
+              </View>
+            )}
             {t.kind === 'CHECKLIST' ? (
               <>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
-                  {t.items.map((i) => (
+                  {shown.map((i) => (
                     <Chip key={i.key} label={i.label} selected={sh.checked.includes(i.label)} onPress={() => patchSheet(t._id, { checked: sh.checked.includes(i.label) ? sh.checked.filter((y) => y !== i.label) : [...sh.checked, i.label] })} />
                   ))}
                 </View>
@@ -383,9 +393,9 @@ export default function VisitForm() {
                 {reportMode === 'FORM' ? (
                   <View style={{ marginTop: S.md, gap: S.sm }}>
                     <Field label="Report date"><DateInput value={sh.date || ''} onChange={(d) => patchSheet(t._id, { date: d })} maximumDate={new Date()} /></Field>
-                    {t.items.map((i) => (
+                    {shown.map((i) => (
                       <Field key={i.key} label={i.label}>
-                        <Input value={sh.vals[i.key] || ''} onChangeText={(x) => patchSheet(t._id, { vals: { ...sh.vals, [i.key]: x } })} placeholder="Leave empty if not tested" />
+                        <Input value={sh.vals[i.key] || ''} onChangeText={(x) => patchSheet(t._id, { vals: { ...sh.vals, [i.key]: x } })} placeholder="Value (empty = not tested)" />
                       </Field>
                     ))}
                   </View>

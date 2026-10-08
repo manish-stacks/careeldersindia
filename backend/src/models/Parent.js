@@ -45,6 +45,7 @@ const parentSchema = new mongoose.Schema(
     dateOfBirth: { type: Date, required: true },
     relationToOwner: { type: String, trim: true }, // Mother / Father / Grandparent...
     mobile: { type: String, trim: true },
+    photoMediaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Media' },
     address: { type: addressSchema, required: true },
     location: {
       type: { type: String, enum: ['Point'] }, // no default: a location without coordinates breaks the 2dsphere index

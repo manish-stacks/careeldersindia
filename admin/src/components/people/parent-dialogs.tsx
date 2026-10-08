@@ -1,4 +1,5 @@
 'use client';
+import { lookupPincode } from '@/lib/pincode';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { del, patch } from '@/lib/api';
@@ -23,6 +24,11 @@ export function EditParentDialog({ parent, invalidate, onClose }: { parent: Pare
     ecName: ec?.name || '', ecMobile: ec?.mobile || '', conditions: (parent.medicalConditions || []).join(', '), allergies: (parent.allergies || []).join(', '), notes: parent.specialInstructions || '',
   });
   const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const setPin = async (v: string) => {
+    set('pincode', v);
+    const r = await lookupPincode(v.trim());
+    if (r) setF((s) => ({ ...s, pincode: v, city: r.city, state: r.state }));
+  };
   const body = {
     fullName: f.fullName.trim(), gender: f.gender, dateOfBirth: f.dateOfBirth, relationToOwner: f.relationToOwner.trim() || undefined, mobile: f.mobile.trim() || undefined, bloodGroup: f.bloodGroup,
     address: { line1: f.line1.trim(), line2: f.line2.trim() || undefined, city: f.city.trim(), state: f.state.trim(), pincode: f.pincode.trim() },
@@ -39,13 +45,13 @@ export function EditParentDialog({ parent, invalidate, onClose }: { parent: Pare
         <Field label="Relation to customer"><Input value={f.relationToOwner} onChange={(e) => set('relationToOwner', e.target.value)} /></Field>
         <Field label="Gender"><Select value={f.gender} onChange={(e) => set('gender', e.target.value)}><option value="FEMALE">Female</option><option value="MALE">Male</option><option value="OTHER">Other</option></Select></Field>
         <Field label="Date of birth"><Input type="date" value={f.dateOfBirth} onChange={(e) => set('dateOfBirth', e.target.value)} /></Field>
-        <Field label="Mobile (optional)"><Input value={f.mobile} onChange={(e) => set('mobile', e.target.value)} placeholder="+91…" /></Field>
+        <Field label="Patient mobile" hint="The assistant calls this number."><Input value={f.mobile} onChange={(e) => set('mobile', e.target.value)} placeholder="+91…" /></Field>
         <Field label="Blood group"><Select value={f.bloodGroup} onChange={(e) => set('bloodGroup', e.target.value)}>{['UNKNOWN', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((b) => <option key={b}>{b}</option>)}</Select></Field>
         <Field label="Address" className="sm:col-span-2"><Input value={f.line1} onChange={(e) => set('line1', e.target.value)} /></Field>
         <Field label="Address line 2" className="sm:col-span-2"><Input value={f.line2} onChange={(e) => set('line2', e.target.value)} /></Field>
         <Field label="City"><Input value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
         <Field label="State"><Input value={f.state} onChange={(e) => set('state', e.target.value)} /></Field>
-        <Field label="PIN code"><Input value={f.pincode} onChange={(e) => set('pincode', e.target.value)} /></Field>
+        <Field label="PIN code" hint="City and state fill in automatically."><Input value={f.pincode} onChange={(e) => setPin(e.target.value)} maxLength={6} inputMode="numeric" /></Field>
         <span />
         <Field label="Emergency contact name"><Input value={f.ecName} onChange={(e) => set('ecName', e.target.value)} /></Field>
         <Field label="Emergency contact mobile"><Input value={f.ecMobile} onChange={(e) => set('ecMobile', e.target.value)} placeholder="+91…" /></Field>

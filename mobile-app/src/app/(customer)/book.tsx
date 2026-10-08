@@ -8,7 +8,7 @@ import { addDays, hhmmLabel, inr, istDate, istToDate, ymdLabel, deviceTz, time a
 import { C, R, S } from "@/lib/theme";
 import type { Booking, Parent, Plan, Service } from '@/lib/types';
 import { Button, Card, Choice, Chip, ErrorView, Field, Input, Loading, Notice, Screen, T, Toggle } from '@/components/ui';
-import { DateInput } from '@/components/inputs';
+import { DateInput, TimeInput } from '@/components/inputs';
 
 const SLOTS = Array.from({ length: 27 }, (_, i) => {
   const m = 7 * 60 + i * 30;
@@ -26,6 +26,7 @@ export default function Book() {
   const [serviceId, setServiceId] = useState(params.serviceId || '');
   const [date, setDate] = useState('');
   const [slot, setSlot] = useState('');
+  const [itemKeys, setItemKeys] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [recurring, setRecurring] = useState(false);
   const [freq, setFreq] = useState<Freq>('WEEKLY');
@@ -42,6 +43,7 @@ export default function Book() {
   const today = istDate();
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(today, i)), [today]);
   const slotOk = (d: string, t: string) => istToDate(d, t).getTime() >= Date.now() + LEAD_MS;
+  const slotValid = !!date && !!slot && slot >= SLOTS[0] && slot <= SLOTS[SLOTS.length - 1] && slotOk(date, slot);
   const daySlots = date ? SLOTS.filter((t) => slotOk(date, t)) : [];
   useEffect(() => {
     if (!date) setDate(days.find((d) => SLOTS.some((t) => slotOk(d, t))) || days[1]);
@@ -53,6 +55,12 @@ export default function Book() {
   }, [date]);
 
   const service = services.data?.find((s) => s._id === serviceId);
+  const items = service?.items || [];
+  useEffect(() => {
+    setItemKeys((service?.items || []).map((i) => i.key)); // all tests ticked by default
+  }, [service?._id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const toggleItem = (k: string) => setItemKeys((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]));
+  const keys = items.length ? itemKeys : undefined;
   const parent = bookable.find((p) => p._id === parentId);
   const perVisit = service ? (recurring ? Math.round(service.basePrice * (1 - service.recurringDiscountPercent / 100)) : service.basePrice) : 0;
 
@@ -65,10 +73,10 @@ export default function Book() {
   const create = useAction(
     async () => {
       if (recurring) {
-        const r = await api.post<{ plan: Plan }>('/customer/recurring-plans', { parentId, serviceId, frequency: freq, startDate: date, time: slot, totalVisits: count, notes: notes.trim() || undefined });
+        const r = await api.post<{ plan: Plan }>('/customer/recurring-plans', { parentId, serviceId, itemKeys: keys, frequency: freq, startDate: date, time: slot, totalVisits: count, notes: notes.trim() || undefined });
         return { planId: r.plan._id };
       }
-      const b = await api.post<Booking>('/customer/bookings', { parentId, serviceId, date, time: slot, customerNotes: notes.trim() || undefined });
+      const b = await api.post<Booking>('/customer/bookings', { parentId, serviceId, itemKeys: keys, date, time: slot, customerNotes: notes.trim() || undefined });
       return { bookingId: b._id };
     },
     { invalidate: [['home'], ['bookings'], ['plans']], onDone: (r) => router.replace({ pathname: '/pay', params: r }) }
@@ -83,7 +91,7 @@ export default function Book() {
       </Screen>
     );
 
-  const ready = parentId && serviceId && date && slot;
+  const ready = parentId && serviceId && date && slot && slotValid && (!items.length || itemKeys.length > 0);
   const tz = deviceTz();
   const abroad = !['Asia/Kolkata', 'Asia/Calcutta'].includes(tz);
 
@@ -130,11 +138,21 @@ export default function Book() {
                 <T v="heading">{inr(s.basePrice)}</T>
               </View>
               {s.description ? <T v="small">{s.description}</T> : null}
-              <T v="caption" style={{ marginTop: 4 }}>About {s.durationMinutes} minutes</T>
+              <T v="caption" style={{ marginTop: 4 }}>About {s.durationMinutes} minutes{s.items?.length ? ` · ${s.items.length} tests` : ''}</T>
             </Pressable>
           ))}
         </View>
       </Field>
+
+      {items.length > 0 && (
+        <Field label={`Tests included in ${service?.name}`} hint="Untick any test you do not need.">
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
+            {items.map((i) => (
+              <Chip key={i.key} label={i.label} icon={itemKeys.includes(i.key) ? 'checkmark-circle' : 'ellipse-outline'} selected={itemKeys.includes(i.key)} onPress={() => toggleItem(i.key)} />
+            ))}
+          </View>
+        </Field>
+      )}
 
       <Field label="Day (India time)">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.sm }}>
@@ -159,11 +177,10 @@ export default function Book() {
         {daySlots.length === 0 ? (
           <T v="small">No times left on this day. Pick another day.</T>
         ) : (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.sm }}>
-            {daySlots.map((t) => (
-              <Chip key={t} label={hhmmLabel(t)} selected={slot === t} onPress={() => setSlot(t)} />
-            ))}
-          </View>
+          <>
+            <TimeInput value={slot} onChange={setSlot} />
+            {slot && !slotValid && <T v="small" color={C.danger} style={{ marginTop: S.xs }}>Pick a time between {hhmmLabel(daySlots[0])} and {hhmmLabel(daySlots[daySlots.length - 1])}.</T>}
+          </>
         )}
       </Field>
 

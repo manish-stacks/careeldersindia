@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { lookupPincode } from '@/lib/pincode';
 import { Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { currentCoords } from '@/lib/tracker';
@@ -39,7 +40,11 @@ export function ParentForm({ initial, submitLabel, busy, onSubmit }: { initial?:
 
   const validContacts = contacts.filter((c) => c.name.trim().length >= 2 && /^\+?[1-9]\d{7,14}$/.test(c.mobile.replace(/[\s-]/g, '')));
   const pinOk = /^[1-9]\d{5}$/.test(f.pincode);
-  const mobileOk = f.mobile.replace(/[\s-]/g, '').length <= 3 || /^\+?[1-9]\d{7,14}$/.test(f.mobile.replace(/[\s-]/g, ''));
+  useEffect(() => {
+    // PIN code fills city and state
+    if (pinOk) lookupPincode(f.pincode).then((r) => r && setF((s) => ({ ...s, city: r.city, state: r.state })));
+  }, [f.pincode]); // eslint-disable-line react-hooks/exhaustive-deps
+  const mobileOk = /^\+?[1-9]\d{7,14}$/.test(f.mobile.replace(/[\s-]/g, ''));
   const valid = f.fullName.trim().length >= 2 && f.gender && f.dob && f.line1.trim().length >= 3 && f.city.trim() && f.state.trim() && pinOk && mobileOk && validContacts.length > 0;
 
   function submit() {
@@ -70,7 +75,7 @@ export function ParentForm({ initial, submitLabel, busy, onSubmit }: { initial?:
         <Choice columns={3} value={f.gender || undefined} onChange={(v) => set('gender')(v)} options={[{ value: 'FEMALE', label: 'Female' }, { value: 'MALE', label: 'Male' }, { value: 'OTHER', label: 'Other' }]} />
       </Field>
       <Field label="Date of birth" required><DateInput value={f.dob} onChange={set('dob')} maximumDate={new Date()} /></Field>
-      <Field label="Their phone" hint="So the care assistant can call when they arrive." error={mobileOk ? undefined : 'Enter a valid number with country code'}>
+      <Field label="Their phone" required hint="So the care assistant can call when they arrive." error={mobileOk ? undefined : 'Enter a valid number with country code'}>
         <Input value={f.mobile} onChangeText={set('mobile')} keyboardType="phone-pad" />
       </Field>
 

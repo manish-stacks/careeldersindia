@@ -88,148 +88,142 @@ function measurementRows(m = {}) {
 
 async function renderPdf(report, images) {
   const d = report.data;
-  const doc = new PDFDocument({ size: 'A4', margin: 48, info: { Title: `Visit summary ${report.reportNumber}`, Author: 'ParentCare' } });
+  const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true, info: { Title: `Test report ${report.reportNumber}`, Author: 'ParentCare' } });
   const chunks = [];
   doc.on('data', (c) => chunks.push(c));
   const done = new Promise((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
-  const W = doc.page.width - 96;
+  const PW = doc.page.width;
+  const W = PW - 96;
+  const bottom = () => doc.page.height - 70;
+  const tests = (d.reports || []).filter((r) => r.kind === 'TABLE' && (r.values || []).some((x) => x.value));
+  const checks = (d.reports || []).filter((r) => r.kind === 'CHECKLIST' && (r.checked || []).length);
+  const legacy = (d.labReport?.values || []).filter((x) => x.value);
 
-  // Header
-  doc.rect(0, 0, doc.page.width, 6).fill(C.brand);
-  doc.fillColor(C.brand).font('Helvetica-Bold').fontSize(16).text('ParentCare', 48, 30);
-  doc.fillColor(C.muted).font('Helvetica').fontSize(9).text(`Report ${report.reportNumber}${report.version > 1 ? ` · v${report.version}` : ''}`, 48, 34, { width: W, align: 'right' });
-  doc.moveDown(1.2);
-  doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(20).text('Visit summary', 48);
-  doc.font('Helvetica').fontSize(10).fillColor(C.muted).text(`${d.service.name} · ${formatLocal(d.visit.completedAt || d.visit.scheduledAt, d.visit.timezone)}`);
-  doc.moveDown(0.8);
+  // Header band
+  doc.rect(0, 0, PW, 64).fill(C.brand);
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('ParentCare', 48, 20);
+  doc.font('Helvetica').fontSize(9).text('Home health care', 48, 44);
+  doc.font('Helvetica-Bold').fontSize(11).text(tests.length || legacy.length ? 'TEST REPORT' : 'VISIT REPORT', 48, 22, { width: W, align: 'right' });
+  doc.font('Helvetica').fontSize(9).text(`${report.reportNumber}${report.version > 1 ? ` · version ${report.version}` : ''}`, 48, 40, { width: W, align: 'right' });
 
-  // Status pill
-  const statusColor = STATUS_COLOR[d.overallStatus] || C.muted;
-  const y0 = doc.y;
-  doc.roundedRect(48, y0, W, 38, 6).fill(C.tint);
-  doc.rect(48, y0, 4, 38).fill(statusColor);
-  doc.fillColor(C.muted).fontSize(9).text('Overall status (assistant observation)', 62, y0 + 7);
-  doc.fillColor(statusColor).font('Helvetica-Bold').fontSize(13).text(STATUS_LABEL[d.overallStatus] || '—', 62, y0 + 19);
-  if (d.followUp?.required) doc.fillColor(C.attention).fontSize(10).text('Follow-up recommended', 48, y0 + 19, { width: W - 14, align: 'right' });
-  doc.y = y0 + 52;
-
-  const section = (title) => {
-    if (doc.y > doc.page.height - 140) doc.addPage();
-    doc.moveDown(0.6);
-    doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(11).text(title, 48);
-    doc.moveTo(48, doc.y + 3).lineTo(48 + W, doc.y + 3).lineWidth(0.5).strokeColor(C.line).stroke();
-    doc.moveDown(0.6);
-    doc.font('Helvetica').fontSize(10).fillColor(C.ink);
+  // Patient / visit box
+  const boxY = 80;
+  doc.roundedRect(48, boxY, W, 92, 6).lineWidth(0.8).strokeColor(C.line).fillAndStroke(C.tint, C.line);
+  const info = (label, value, x, y) => {
+    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text(label.toUpperCase(), x, y, { width: W / 2 - 20 });
+    doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(10.5).text(String(value ?? '—'), x, y + 10, { width: W / 2 - 20 });
   };
-  const kv = (rows) => {
-    rows.forEach(([k, v]) => {
+  const L = 62, R = 48 + W / 2 + 6;
+  info('Patient', d.patient.name, L, boxY + 12);
+  info('Age / gender', `${d.patient.age ?? '—'} yrs · ${humanise(d.patient.gender)}`, L, boxY + 52);
+  info('Booking', d.visit.bookingNumber, R, boxY + 12);
+  info('Sample / visit date', `${d.visit.scheduledLocal?.date || ''} ${d.visit.scheduledLocal?.time || ''}`.trim(), R, boxY + 52);
+  doc.y = boxY + 108;
+
+  const ensure = (h) => { if (doc.y + h > bottom()) { doc.addPage(); doc.y = 50; return true; } return false; };
+  const heading = (title, sub) => {
+    ensure(60);
+    doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(12).text(title, 48, doc.y);
+    if (sub) doc.fillColor(C.muted).font('Helvetica').fontSize(9).text(sub, 48, doc.y + 1);
+    doc.moveDown(0.5);
+  };
+  // two-column table: header bar + zebra rows
+  const table = (c1, c2, rows) => {
+    const head = () => {
       const y = doc.y;
-      doc.fillColor(C.muted).text(k, 48, y, { width: 150 });
-      doc.fillColor(C.ink).text(v ?? '—', 200, y, { width: W - 152 });
-      doc.moveDown(0.35);
+      doc.rect(48, y, W, 22).fill(C.ink);
+      doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(9).text(c1.toUpperCase(), 58, y + 7, { width: W * 0.55 }).text(c2.toUpperCase(), 48 + W * 0.6, y + 7, { width: W * 0.4 - 10 });
+      doc.y = y + 22;
+    };
+    head();
+    rows.forEach(([k, v], i) => {
+      if (ensure(24)) head();
+      const y = doc.y;
+      if (i % 2 === 0) doc.rect(48, y, W, 22).fill(C.tint);
+      doc.fillColor(C.ink).font('Helvetica').fontSize(10).text(k, 58, y + 6, { width: W * 0.55 });
+      doc.font('Helvetica-Bold').text(String(v ?? '—'), 48 + W * 0.6, y + 6, { width: W * 0.4 - 10 });
+      doc.moveTo(48, y + 22).lineTo(48 + W, y + 22).lineWidth(0.4).strokeColor(C.line).stroke();
+      doc.y = y + 22;
     });
+    doc.moveDown(1);
   };
+  const para = (text, color = C.ink) => { doc.fillColor(color).font('Helvetica').fontSize(10).text(text, 48, doc.y, { width: W }); doc.moveDown(0.8); };
 
-  section('Patient');
-  kv([
-    ['Name', d.patient.name],
-    ['Age / gender', `${d.patient.age ?? '—'} yrs · ${humanise(d.patient.gender)}`],
-    ['Blood group', d.patient.bloodGroup],
-    ['City', d.patient.city],
-  ]);
-
-  section('Visit');
-  kv([
-    ['Booking', d.visit.bookingNumber],
-    ['Scheduled', `${d.visit.scheduledLocal?.date} ${d.visit.scheduledLocal?.time} (India time)`],
-    ['Started / completed', `${d.visit.startedAt ? formatLocal(d.visit.startedAt, d.visit.timezone, 'h:mm a') : '—'} – ${d.visit.completedAt ? formatLocal(d.visit.completedAt, d.visit.timezone, 'h:mm a') : '—'}`],
-    ['Care assistant', d.assistant.name],
-  ]);
-
-  section('Recorded measurements');
-  const rows = measurementRows(d.measurements);
-  kv(rows.length ? rows : [['—', 'No measurements recorded']]);
-
-  section('Symptoms reported');
-  doc.text(d.symptoms?.length ? d.symptoms.join(', ') : 'None reported', 48, doc.y, { width: W });
-  if (d.symptomNotes) doc.moveDown(0.3).fillColor(C.muted).text(d.symptomNotes, { width: W });
-  if (d.servicesPerformed?.length) doc.moveDown(0.8).fillColor(C.ink).font('Helvetica-Bold').text('Services performed').font('Helvetica').fillColor(C.muted).text(d.servicesPerformed.join(', '), { width: W });
-  for (const r of d.reports || []) {
-    const rows = r.kind === 'CHECKLIST' ? (r.checked || []).join(', ') : (r.values || []).filter((x) => x.value).map((x) => `${x.label}: ${x.value}`).join('\n');
-    if (rows) doc.moveDown(0.8).fillColor(C.ink).font('Helvetica-Bold').text(`${r.name}${r.reportDate ? ` · ${r.reportDate}` : ''}`).font('Helvetica').fillColor(C.muted).text(rows, { width: W });
+  // Test results (main part of a lab-style report)
+  for (const r of tests) {
+    heading(r.name, r.reportDate ? `Report date: ${r.reportDate}` : undefined);
+    table('Test', 'Result', r.values.filter((x) => x.value).map((x) => [x.label, x.value]));
   }
-  if (d.labReport?.values?.length) {
-    doc.moveDown(0.8).fillColor(C.ink).font('Helvetica-Bold').text(`Blood haematology${d.labReport.reportDate ? ` · ${d.labReport.reportDate}` : ''}`).font('Helvetica').fillColor(C.muted);
-    for (const r of d.labReport.values.filter((x) => x.value)) doc.text(`${r.label}: ${r.value}`, { width: W });
+  if (!tests.length && legacy.length) {
+    heading('Blood haematology', d.labReport.reportDate ? `Report date: ${d.labReport.reportDate}` : undefined);
+    table('Test', 'Result', legacy.map((x) => [x.label, x.value]));
   }
-  if (d.reportMode === 'IMAGE') doc.moveDown(0.5).fillColor(C.muted).text('Lab report attached as image(s) — see the Photos section of the visit in the app.', { width: W });
+  if (d.reportMode === 'IMAGE') para('The test report was uploaded as an image. See the attached pages below.', C.muted);
+  for (const r of checks) {
+    heading(r.name, r.reportDate ? `Date: ${r.reportDate}` : undefined);
+    table('Service', 'Status', r.checked.map((x) => [x, 'Done']));
+  }
+
+  const m = measurementRows(d.measurements);
+  if (m.length) { heading('Vital signs'); table('Measurement', 'Value', m); }
+
+  const statusColor = STATUS_COLOR[d.overallStatus] || C.muted;
+  heading('Assistant observation');
+  const sy = doc.y;
+  doc.roundedRect(48, sy, W, 34, 5).fill(C.tint);
+  doc.rect(48, sy, 4, 34).fill(statusColor);
+  doc.fillColor(statusColor).font('Helvetica-Bold').fontSize(12).text(STATUS_LABEL[d.overallStatus] || '—', 62, sy + 11);
+  if (d.followUp?.required) doc.fillColor(C.attention).font('Helvetica').fontSize(10).text('Follow-up recommended', 48, sy + 12, { width: W - 14, align: 'right' });
+  doc.y = sy + 46;
+  if (d.notes) para(d.notes);
+  if (d.symptoms?.length) para(`Symptoms reported: ${d.symptoms.join(', ')}${d.symptomNotes ? `. ${d.symptomNotes}` : ''}`, C.muted);
+  if (d.servicesPerformed?.length) para(`Services performed: ${d.servicesPerformed.join(', ')}`, C.muted);
 
   if (d.medicationStatus?.length) {
-    section('Medication record (as reported)');
-    kv(d.medicationStatus.map((m) => [`${m.medicineName}`, `${humanise(m.slot)}: ${humanise(m.status)} (reported by ${humanise(m.reportedBy)})`]));
+    heading('Medication record (as reported)');
+    table('Medicine', 'Status', d.medicationStatus.map((x) => [`${x.medicineName} (${humanise(x.slot)})`, humanise(x.status)]));
   }
+  if (d.urgent) { heading('Escalation'); para([d.urgent.reason, d.urgent.notes, d.urgent.recommendedEscalation && `Recommended: ${humanise(d.urgent.recommendedEscalation)}`].filter(Boolean).join('\n')); }
+  if (d.followUp?.required && d.followUp.notes) { heading('Follow-up'); para(d.followUp.notes); }
 
-  if (d.mobility || d.wellbeing) {
-    section('Assistant observations');
-    const w = d.wellbeing || {};
-    kv([
-      ['Mobility', humanise(d.mobility)],
-      ['Appetite', humanise(w.appetite)],
-      ['Sleep', humanise(w.sleep)],
-      ['Mood', humanise(w.mood)],
-      ['Hydration', humanise(w.hydration)],
-    ].filter(([, v]) => v !== '—'));
-  }
-
-  if (d.notes) {
-    section('Assistant notes');
-    doc.text(d.notes, 48, doc.y, { width: W });
-  }
-
-  if (d.urgent) {
-    section('Escalation');
-    kv([
-      ['Reason', d.urgent.reason],
-      ['Notes', d.urgent.notes],
-      ['Recommended escalation', humanise(d.urgent.recommendedEscalation)],
-    ]);
-  }
-
-  if (d.followUp?.required) {
-    section('Follow-up');
-    doc.text(d.followUp.notes || 'Follow-up recommended by the assistant.', 48, doc.y, { width: W });
-  }
-
+  // Attached photos / report images, one large image per block
   if (images.length) {
-    section('Photos & documents');
+    doc.addPage();
+    doc.y = 50;
+    heading('Attached photos and report images');
+    const size = (W - 24) / 2;
     let x = 48;
-    const size = (W - 24) / 3;
     let rowY = doc.y;
     images.forEach((img, i) => {
-      if (i && i % 3 === 0) {
-        rowY += size + 20;
-        x = 48;
-      }
-      if (rowY + size > doc.page.height - 80) {
-        doc.addPage();
-        rowY = 60;
-      }
+      if (i && i % 2 === 0) { rowY += size + 24; x = 48; }
+      if (rowY + size > bottom()) { doc.addPage(); rowY = 50; x = 48; }
       try {
         doc.image(img.buffer, x, rowY, { fit: [size, size], align: 'center', valign: 'center' });
+        doc.rect(x, rowY, size, size).lineWidth(0.4).strokeColor(C.line).stroke();
         doc.fontSize(8).fillColor(C.muted).text(humanise(img.type), x, rowY + size + 4, { width: size });
-      } catch {
-        /* skip unreadable image */
-      }
-      x += size + 12;
+      } catch { /* skip unreadable image */ }
+      x += size + 24;
     });
-    doc.y = rowY + size + 24;
   }
 
-  // Disclaimer + footer
-  if (doc.y > doc.page.height - 120) doc.addPage();
+  // Sign-off + disclaimer
+  ensure(110);
   doc.moveDown(1);
-  doc.fontSize(8.5).fillColor(C.muted).text(d.disclaimer, 48, doc.y, { width: W });
-  doc.moveDown(0.4).text(`Generated ${formatLocal(new Date(), d.visit.timezone)}`, { width: W });
+  const sg = doc.y;
+  doc.moveTo(48, sg + 28).lineTo(210, sg + 28).lineWidth(0.6).strokeColor(C.muted).stroke();
+  doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(10).text(d.assistant?.name || 'Care assistant', 48, sg + 33);
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8.5).text(`Care assistant · ${formatLocal(d.visit.completedAt || new Date(), d.visit.timezone)}`, 48, sg + 46);
+  doc.fontSize(8).fillColor(C.muted).text(d.disclaimer, 48, sg + 70, { width: W });
+
+  // Footer on every page
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i);
+    doc.page.margins.bottom = 0;
+    doc.moveTo(48, doc.page.height - 40).lineTo(48 + W, doc.page.height - 40).lineWidth(0.4).strokeColor(C.line).stroke();
+    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text(`ParentCare · ${report.reportNumber} · ${d.patient.name}`, 48, doc.page.height - 32, { width: W, align: 'left', lineBreak: false });
+    doc.text(`Page ${i + 1} of ${range.count}`, 48, doc.page.height - 32, { width: W, align: 'right', lineBreak: false });
+  }
 
   doc.end();
   return done;

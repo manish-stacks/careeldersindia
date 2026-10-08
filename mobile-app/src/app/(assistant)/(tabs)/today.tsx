@@ -1,4 +1,5 @@
-import { View, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { firstName, humanize, time } from '@/lib/format';
 import { C, R, S } from '@/lib/theme';
 import type { AssistantProfile, Job } from '@/lib/types';
 import { Button, Card, Empty, ErrorView, IconButton, Loading, Notice, Screen, Section, T, Toggle } from '@/components/ui';
+import { NotifyPrompt } from '@/components/notify-prompt';
 import { JobBadge } from '@/components/status';
 
 type Home = { profile: Pick<AssistantProfile, 'verificationStatus' | 'isOnline' | 'isAvailable' | 'stats' | 'rating'>; todays: Job[]; counts: { today: number; completed: number; pending: number; awaitingAcceptance: number } };
@@ -47,6 +49,7 @@ export default function Today() {
             action={<Button title="Documents" size="md" variant="secondary" onPress={() => router.push('/documents')} style={{ marginTop: S.sm, alignSelf: 'flex-start', paddingHorizontal: S.xl }} />}
           />
         )}
+        <NotifyPrompt />
         <Card>
           <Toggle label={profile.isAvailable ? 'Available for new visits' : 'Not taking new visits'} description={connected ? 'You are online' : 'Connecting…'} value={profile.isAvailable} onChange={(v) => avail.mutate(v)} />
         </Card>
@@ -54,6 +57,22 @@ export default function Today() {
           <Stat n={counts.today} label="Today" />
           <Stat n={counts.completed} label="Done" />
           <Stat n={counts.awaitingAcceptance} label="To accept" hot={counts.awaitingAcceptance > 0} onPress={() => router.push({ pathname: '/jobs', params: { scope: 'new' } })} />
+        </View>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          {([
+            { l: 'New visits', icon: 'briefcase', go: { pathname: '/jobs', params: { scope: 'new' } } },
+            { l: 'Upcoming', icon: 'calendar', go: { pathname: '/jobs', params: { scope: 'upcoming' } } },
+            { l: 'Earnings', icon: 'wallet', go: '/earnings' },
+            { l: 'Documents', icon: 'document-text', go: '/documents' },
+          ] as const).map((a) => (
+            <Pressable key={a.l} onPress={() => router.push(a.go as never)} style={{ alignItems: 'center', gap: 6, width: '23%' }} accessibilityRole="button" accessibilityLabel={a.l}>
+              <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={a.icon} size={24} color={C.brand} />
+              </View>
+              <T v="caption" color={C.ink}>{a.l}</T>
+            </Pressable>
+          ))}
         </View>
 
         {next && (

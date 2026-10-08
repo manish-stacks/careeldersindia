@@ -111,6 +111,7 @@ async function createPlanFor(admin, input, req) {
     userIds: customer._id, type: notifications.TYPES.BOOKING_CONFIRMED, title: 'Care plan active',
     body: `Plan ${plan.planNumber} for ${parent.fullName} is active (${plan.totalVisits} visits, ${plan.startDate} to ${plan.endDate}).`, data: { recurringPlanId: String(plan._id) },
   });
+  await recurring.recordPrepaid(plan, admin); // admin-sold plans are prepaid (paid offline)
   await recurring.generateForPlan(plan);
   return RecurringPlan.findById(plan._id);
 }

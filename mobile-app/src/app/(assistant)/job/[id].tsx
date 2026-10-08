@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Linking, Platform, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import * as WebBrowser from 'expo-web-browser';
+import { api, fixUrl } from '@/lib/api';
 import { useAction, confirm } from '@/lib/hooks';
 import { currentCoords, ensureBackgroundPermission, isAndroid, onTrackingChange, openAppSettings, startTracking, stopTracking, trackingBooking, trackingMode, type Mode } from '@/lib/tracker';
 import { dateLong, humanize, time } from '@/lib/format';
@@ -119,7 +120,12 @@ export default function JobScreen() {
           <Notice tone="danger" icon="location-outline" title="Location sharing is off" body="The family and care desk can't see you on the way." action={<Button title="Share my location" size="md" style={{ marginTop: S.sm, alignSelf: 'flex-start', paddingHorizontal: S.xl }} loading={resume.isPending} onPress={() => resume.mutate()} />} />
         </View>
       )}
-      {DONE.includes(j.status) && <View style={{ marginTop: S.md }}><Notice tone="ok" title="Visit completed" body="Thank you. The report has been sent to the family." /></View>}
+      {DONE.includes(j.status) && (
+        <View style={{ marginTop: S.md, gap: S.sm }}>
+          <Notice tone="ok" title="Visit completed" body="Thank you. The report has been sent to the family." />
+          {j.reportId ? <Button title="Download report (PDF)" icon="download-outline" variant="secondary" onPress={async () => { try { const r = await api.get<{ url: string }>(`/reports/${j.reportId}/pdf`); await WebBrowser.openBrowserAsync(fixUrl(r.url)!); } catch { /* shown by api layer */ } }} /> : null}
+        </View>
+      )}
 
       {!!p.allergies?.length && (
         <View style={{ marginTop: S.lg }}>
@@ -134,7 +140,21 @@ export default function JobScreen() {
             <Button title="Directions" icon="map-outline" size="md" variant="secondary" style={{ flex: 1 }} onPress={navigate} />
             {p.mobile ? <Button title="Call" icon="call-outline" size="md" variant="secondary" style={{ flex: 1 }} onPress={() => Linking.openURL(`tel:${p.mobile}`)} /> : null}
           </View>
-          {!p.mobile && j.status === 'ASSISTANT_ASSIGNED' && <T v="caption" style={{ marginTop: S.sm }}>Phone numbers appear after you accept.</T>}
+        </Card>
+      </Section>
+
+      <Section title="Patient and family">
+        <Card>
+          <KV label="Patient" value={`${p.name}${p.age ? `, ${p.age}` : ''}`} />
+          <KV label="Patient mobile" value={p.mobile || 'Not provided'} />
+          {j.customer ? (
+            <>
+              <KV label="Booked by" value={j.customer.name} />
+              {j.customer.mobile ? <KV label="Family mobile" value={j.customer.mobile} /> : null}
+              {j.customer.email ? <KV label="Family email" value={j.customer.email} /> : null}
+              {j.customer.mobile ? <Button title="Call family" icon="call-outline" size="md" variant="secondary" style={{ marginTop: S.sm }} onPress={() => Linking.openURL(`tel:${j.customer!.mobile}`)} /> : null}
+            </>
+          ) : null}
         </Card>
       </Section>
 

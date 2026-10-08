@@ -1,4 +1,6 @@
-const { Parent, FamilyMember, User, Booking, HealthReport, HealthMeasurement } = require('../models');
+const { Parent, FamilyMember, User, Booking, HealthReport, HealthMeasurement, Media } = require('../models');
+const { storage } = require('../config/storage');
+const mediaService = require('./media.service');
 const { ApiError } = require('../utils/ApiError');
 const { FAMILY_PERMISSIONS, TERMINAL_STATUSES } = require('../config/constants');
 const access = require('./access.service');
@@ -18,6 +20,23 @@ function withLatLng(input) {
   return location ? { ...rest, location } : rest;
 }
 
+/** Adds a short-lived signed photoUrl to a parent JSON object. */
+async function withPhoto(json) {
+  if (!json.photoMediaId) return json;
+  const media = await Media.findById(json.photoMediaId).select('key').lean();
+  return { ...json, photoUrl: media ? await storage.getSignedUrl(media.key) : undefined };
+}
+
+async function setPhoto(user, parentId, file, req) {
+  const { parent } = await access.assertParentAccess(user, parentId, FAMILY_PERMISSIONS.MANAGE);
+  if (!file || !file.mimetype.startsWith('image/')) throw ApiError.badRequest('Please choose a JPG, PNG or WEBP photo', 'INVALID_FILE');
+  const media = await mediaService.store({ buffer: file.buffer, mime: file.mimetype, size: file.size, originalName: file.originalname, type: 'PROFILE_PHOTO', uploadedBy: user.id, folder: `parents/${parent._id}`, parentId: parent._id });
+  parent.photoMediaId = media._id;
+  await parent.save();
+  await audit({ actor: user, action: 'PARENT_PHOTO_UPDATED', entityType: 'Parent', entityId: parent._id, req });
+  return withPhoto(parent.toJSON());
+}
+
 async function listForUser(user) {
   const memberships = await FamilyMember.find({ userId: user.id, status: 'ACTIVE' }).lean();
   const parents = await Parent.find({ _id: { $in: memberships.map((m) => m.parentId) }, status: 'ACTIVE' }).sort({ createdAt: 1 });
@@ -28,10 +47,10 @@ async function listForUser(user) {
     { $group: { _id: '$parentId', bookingId: { $first: '$_id' }, scheduledAt: { $first: '$scheduledAt' }, status: { $first: '$status' } } },
   ]);
   const nextByParent = new Map(upcoming.map((u) => [String(u._id), u]));
-  return parents.map((p) => {
+  return Promise.all(parents.map(async (p) => {
     const m = byParent.get(String(p._id));
-    return { ...p.toJSON(), access: { isOwner: m.isOwner, permissions: m.permissions, relation: m.relation }, nextVisit: nextByParent.get(String(p._id)) || null };
-  });
+    return { ...(await withPhoto(p.toJSON())), access: { isOwner: m.isOwner, permissions: m.permissions, relation: m.relation }, nextVisit: nextByParent.get(String(p._id)) || null };
+  }));
 }
 
 async function create(user, input, req) {
@@ -47,7 +66,7 @@ async function getDetails(user, parentId) {
   const family = canManage
     ? await FamilyMember.find({ parentId, status: { $ne: 'REVOKED' } }).populate('userId', 'name email').lean()
     : [];
-  return { ...parent.toJSON(), access: membership ? { isOwner: membership.isOwner, permissions: membership.permissions } : { admin: true }, family };
+  return { ...(await withPhoto(parent.toJSON())), access: membership ? { isOwner: membership.isOwner, permissions: membership.permissions } : { admin: true }, family };
 }
 
 async function update(user, parentId, input, req) {
@@ -136,4 +155,4 @@ async function healthHistory(user, parentId, { from, to, limit = 50 }) {
   return { reports, series };
 }
 
-module.exports = { listForUser, create, getDetails, update, archive, inviteFamily, updateFamilyMember, revokeFamilyMember, healthHistory };
+module.exports = { setPhoto, listForUser, create, getDetails, update, archive, inviteFamily, updateFamilyMember, revokeFamilyMember, healthHistory };

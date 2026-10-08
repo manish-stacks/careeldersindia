@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useWindowDimensions, View, Linking } from 'react-native';
+import { Image, Pressable, useWindowDimensions, View, Linking } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useToast } from '@/components/toast';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -34,6 +35,23 @@ export default function ParentDetail() {
       setSheetBusy('');
     }
   }
+  const photoToast = useToast();
+  async function pickPhoto() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return photoToast('Allow photo access in Settings', 'error');
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+    if (r.canceled || !r.assets[0]) return;
+    const a = r.assets[0];
+    try {
+      const form = new FormData();
+      form.append('file', { uri: a.uri, name: a.fileName || 'patient.jpg', type: a.mimeType || 'image/jpeg' } as unknown as Blob);
+      await api.upload(`/customer/parents/${id}/photo`, form);
+      photoToast('Photo saved');
+      q.refetch();
+    } catch (e) {
+      photoToast((e as Error).message, 'error');
+    }
+  }
   const remove = useAction(() => api.del(`/customer/parents/${id}`), { success: 'Removed', invalidate: [['parents'], ['home']], onDone: () => router.back() });
 
   if (q.isLoading) return <Loading />;
@@ -51,9 +69,10 @@ export default function ParentDetail() {
     <Screen refreshing={q.isRefetching} onRefresh={() => { q.refetch(); h.refetch(); }} footer={canBook ? <Button title="Book a visit" icon="add-circle-outline" onPress={() => router.push({ pathname: '/book', params: { parentId: id } })} /> : undefined}>
       <Stack.Screen options={{ title: p.fullName }} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.md }}>
-        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center' }}>
-          <T v="display" color={C.brandDark}>{p.fullName[0]}</T>
-        </View>
+        <Pressable onPress={canManage ? pickPhoto : undefined} accessibilityRole="button" accessibilityLabel="Change patient photo" style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {p.photoUrl ? <Image source={{ uri: fixUrl(p.photoUrl) }} style={{ width: 72, height: 72 }} /> : <T v="display" color={C.brandDark}>{p.fullName[0]}</T>}
+          {canManage ? <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', paddingVertical: 2, alignItems: 'center' }}><T v="caption" color="#fff">{p.photoUrl ? 'Change' : 'Add photo'}</T></View> : null}
+        </Pressable>
         <View style={{ flex: 1 }}>
           <T v="title">{p.fullName}</T>
           <T v="small">{ageFrom(p.dateOfBirth)} yrs · {humanize(p.gender)}{p.bloodGroup && p.bloodGroup !== 'UNKNOWN' ? ` · ${p.bloodGroup}` : ''}</T>
