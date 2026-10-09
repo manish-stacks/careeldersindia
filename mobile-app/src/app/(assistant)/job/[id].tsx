@@ -85,7 +85,7 @@ export default function JobScreen() {
       case 'REACHED':
         return (
           <View style={{ gap: S.sm }}>
-            <Button title="Start visit" icon="medkit" loading={start.isPending} onPress={() => start.mutate()} />
+            <Button title="Complete visit" icon="medkit" loading={start.isPending} onPress={() => start.mutate()} />
             <Button title="Nobody at home / can't do visit" variant="danger" size="md" onPress={() => { setReason(''); setSheet('noshow'); }} />
           </View>
         );

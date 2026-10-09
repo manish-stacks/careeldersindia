@@ -72,6 +72,11 @@ module.exports = {
 
   listReports: paged((req) => adminService.listReports(req.query)),
   getReport: asyncHandler(async (req, res) => ok(res, await reportService.getForUser(req.user, req.params.id))),
+  summaryPdf: asyncHandler(async (req, res) => {
+    const ok10 = (x) => (/^\d{4}-\d{2}-\d{2}$/.test(x || '') ? x : undefined);
+    const buf = await reportService.summaryPdf({ customerId: req.params.id, parentId: /^[a-f0-9]{24}$/.test(req.query.parentId || '') ? req.query.parentId : undefined, from: ok10(req.query.from), to: ok10(req.query.to) });
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline; filename="overall-report.pdf"' }).send(buf);
+  }),
   reportPdf: asyncHandler(async (req, res) => ok(res, await reportService.pdfUrl(req.user, req.params.id))),
   regeneratePdf: asyncHandler(async (req, res) => ok(res, { pdf: (await reportService.generatePdf(req.params.id))?.pdf }, 'PDF regenerated')),
 

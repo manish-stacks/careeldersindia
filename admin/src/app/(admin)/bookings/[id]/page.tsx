@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { DeleteBookingsDialog } from '@/components/bookings/delete-bookings-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PdfButton } from '@/components/reports/pdf-button';
-import { CalendarClock, CheckCircle2, FileText, MapPin, Phone, UserCog, XCircle, Repeat, Navigation } from 'lucide-react';
+import { CalendarClock, CheckCircle2, FileText, MapPin, Phone, UserCog, XCircle, Repeat, Navigation, Trash2 } from 'lucide-react';
 import { get, post, patch } from '@/lib/api';
 import { useAction } from '@/lib/hooks';
 import { useBookingRoom, useSocketEvent, EVENTS } from '@/lib/socket';
@@ -40,9 +41,10 @@ const TRACKING = ['ON_THE_WAY', 'REACHED'];
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const router = useRouter();
   const q = useQuery({ queryKey: ['booking', id], queryFn: () => get<Detail>(`/admin/bookings/${id}`) });
   const [live, setLive] = useState<LiveLocation | null>(null);
-  const [dialog, setDialog] = useState<null | 'assign' | 'cancel' | 'reschedule' | 'verify'>(null);
+  const [dialog, setDialog] = useState<null | 'assign' | 'cancel' | 'reschedule' | 'verify' | 'delete'>(null);
 
   useBookingRoom(id);
   useSocketEvent<{ location: LiveLocation }>(EVENTS.LOCATION_UPDATED, (p) => p.location?.bookingId === id && setLive(p.location));
@@ -100,6 +102,11 @@ export default function BookingDetailPage() {
             {CANCEL_FROM.includes(b.status) && (
               <Button variant="danger" onClick={() => setDialog('cancel')}>
                 <XCircle className="h-4 w-4" /> Cancel
+              </Button>
+            )}
+            {!['ON_THE_WAY', 'REACHED', 'VISIT_STARTED'].includes(b.status) && (
+              <Button variant="secondary" onClick={() => setDialog('delete')}>
+                <Trash2 className="h-4 w-4" /> Delete
               </Button>
             )}
           </>
@@ -299,6 +306,7 @@ export default function BookingDetailPage() {
       </div>
 
       <AssignDialog bookingId={b._id} open={dialog === 'assign'} onClose={() => setDialog(null)} current={assistant?._id} />
+      {dialog === 'delete' && <DeleteBookingsDialog ids={[b._id]} onClose={() => setDialog(null)} onDone={() => router.push('/bookings')} />}
       {dialog === 'verify' && <VerifyDialog booking={b} onClose={() => setDialog(null)} />}
       {dialog === 'cancel' && <CancelDialog booking={b} onClose={() => setDialog(null)} />}
       {dialog === 'reschedule' && <RescheduleDialog booking={b} onClose={() => setDialog(null)} />}

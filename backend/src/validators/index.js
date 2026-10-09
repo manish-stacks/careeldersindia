@@ -183,6 +183,7 @@ const admin = {
       sortOrder: z.number().int(),
     })
     .partial(),
+  deleteBookings: z.object({ ids: z.array(objectId).min(1).max(100) }),
   bookings: pageQuery.extend({
     status: z.string().optional(),
     queue: z.enum(['verification', 'unassigned', 'active', 'awaiting_acceptance']).optional(),

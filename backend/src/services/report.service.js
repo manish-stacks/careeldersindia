@@ -301,4 +301,122 @@ async function pdfUrl(user, reportId) {
   return { url: await storage.getSignedUrl(media.key), fileName: `${report.reportNumber}.pdf`, expiresInSeconds: 900 };
 }
 
-module.exports = { buildReportData, createFromVisit, generatePdf, renderPdf, listForUser, getForUser, pdfUrl, DISCLAIMER };
+/**
+ * Overall (summary) report for a customer: all completed visits in a period, optionally for one parent.
+ * Shows each test side by side across visit dates so changes are easy to see.
+ */
+async function summaryPdf({ customerId, parentId, from, to }) {
+  const { Parent } = require('../models');
+  const parents = await Parent.find({ ownerId: customerId, ...(parentId ? { _id: parentId } : {}) }).select('fullName dateOfBirth gender bloodGroup').lean();
+  if (!parents.length) throw ApiError.notFound('Patient not found', 'PARENT_NOT_FOUND');
+  const range = {};
+  if (from) range.$gte = new Date(`${from}T00:00:00+05:30`);
+  if (to) range.$lte = new Date(`${to}T23:59:59+05:30`);
+  const visits = await HealthVisit.find({ parentId: { $in: parents.map((p) => p._id) }, status: 'COMPLETED', ...(from || to ? { completedAt: range } : {}) }).lean();
+  const bookings = await Booking.find({ _id: { $in: visits.map((v) => v.bookingId) } }).select('bookingNumber scheduledLocal scheduledAt').lean();
+  const bById = new Map(bookings.map((b) => [String(b._id), b]));
+  const rows = visits.map((v) => ({ v, b: bById.get(String(v.bookingId)) })).filter((x) => x.b).sort((a, b) => new Date(a.b.scheduledAt) - new Date(b.b.scheduledAt));
+  const day = (b) => new Date(`${b.scheduledLocal?.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+  const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true, info: { Title: 'Overall health report', Author: 'ParentCare' } });
+  const chunks = [];
+  doc.on('data', (c) => chunks.push(c));
+  const done = new Promise((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
+  const PW = doc.page.width;
+  const W = PW - 96;
+  const bottom = () => doc.page.height - 70;
+  const ensure = (h) => { if (doc.y + h > bottom()) { doc.addPage(); doc.y = 50; return true; } return false; };
+
+  doc.rect(0, 0, PW, 64).fill(C.brand);
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('ParentCare', 48, 20);
+  doc.font('Helvetica').fontSize(9).text('Home health care', 48, 44);
+  doc.font('Helvetica-Bold').fontSize(11).text('OVERALL REPORT', 48, 22, { width: W, align: 'right' });
+  doc.font('Helvetica').fontSize(9).text(`${from || 'Start'} to ${to || 'today'}`, 48, 40, { width: W, align: 'right' });
+
+  const p0 = parents[0];
+  doc.roundedRect(48, 80, W, 70, 6).lineWidth(0.8).strokeColor(C.line).fillAndStroke(C.tint, C.line);
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8).text('PATIENT', 62, 92);
+  doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(13).text(parents.length === 1 ? p0.fullName : `${parents.length} patients`, 62, 103);
+  if (parents.length === 1) doc.fillColor(C.muted).font('Helvetica').fontSize(9.5).text(`${ageFromDob(p0.dateOfBirth) ?? '—'} yrs · ${humanise(p0.gender)}${p0.bloodGroup ? ` · ${p0.bloodGroup}` : ''}`, 62, 123);
+  const cnt = (s) => rows.filter((x) => x.v.overallStatus === s).length;
+  doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(11).text(`${rows.length} visits`, 48, 96, { width: W - 14, align: 'right' });
+  doc.fillColor(C.muted).font('Helvetica').fontSize(9).text(`Stable ${cnt('STABLE')} · Needs attention ${cnt('NEEDS_ATTENTION')} · Urgent ${cnt('URGENT')}`, 48, 114, { width: W - 14, align: 'right' });
+  doc.y = 168;
+
+  if (!rows.length) {
+    doc.fillColor(C.muted).font('Helvetica').fontSize(11).text('No completed visits in this period.', 48, doc.y);
+  }
+
+  // Test matrix: one row per test, one column per visit date (max 6 columns, then a new block)
+  const sheets = new Map(); // name -> { kind, labels: Map(label -> per visit value) }
+  rows.forEach(({ v }, i) => (v.reports || []).forEach((r) => {
+    const s = sheets.get(r.name) || { kind: r.kind, labels: new Map() };
+    sheets.set(r.name, s);
+    const put = (label, val) => { const arr = s.labels.get(label) || []; arr[i] = val; s.labels.set(label, arr); };
+    if (r.kind === 'CHECKLIST') (r.checked || []).forEach((x) => put(x, 'Done'));
+    else (r.values || []).filter((x) => x.value).forEach((x) => put(x.label, x.value));
+  }));
+  for (const [name, s] of sheets) {
+    if (!s.labels.size) continue;
+    ensure(80);
+    doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(12).text(name, 48, doc.y);
+    doc.moveDown(0.5);
+    for (let start = 0; start < rows.length; start += 6) {
+      const cols = rows.slice(start, start + 6);
+      const lw = 150;
+      const cw = (W - lw) / cols.length;
+      const head = () => {
+        const y = doc.y;
+        doc.rect(48, y, W, 22).fill(C.ink);
+        doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(8.5).text(s.kind === 'CHECKLIST' ? 'SERVICE' : 'TEST', 58, y + 7, { width: lw - 10 });
+        cols.forEach((c, k) => doc.text(day(c.b), 48 + lw + k * cw, y + 7, { width: cw - 6, align: 'center' }));
+        doc.y = y + 22;
+      };
+      head();
+      let n = 0;
+      for (const [label, arr] of s.labels) {
+        if (!cols.some((_, k) => arr[start + k])) continue;
+        if (ensure(22)) head();
+        const y = doc.y;
+        if (n++ % 2 === 0) doc.rect(48, y, W, 21).fill(C.tint);
+        doc.fillColor(C.ink).font('Helvetica').fontSize(9.5).text(label, 58, y + 6, { width: lw - 10, lineBreak: false });
+        doc.font('Helvetica-Bold');
+        cols.forEach((_, k) => doc.text(String(arr[start + k] ?? '—'), 48 + lw + k * cw, y + 6, { width: cw - 6, align: 'center', lineBreak: false }));
+        doc.moveTo(48, y + 21).lineTo(48 + W, y + 21).lineWidth(0.4).strokeColor(C.line).stroke();
+        doc.y = y + 21;
+      }
+      doc.moveDown(1);
+    }
+  }
+
+  // Visit log
+  if (rows.length) {
+    ensure(70);
+    doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(12).text('Visit log', 48, doc.y);
+    doc.moveDown(0.5);
+    rows.forEach(({ v, b }) => {
+      ensure(48);
+      const y = doc.y;
+      const col = STATUS_COLOR[v.overallStatus] || C.muted;
+      doc.rect(48, y, 4, 34).fill(col);
+      doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(10).text(`${day(b)} · ${b.bookingNumber}`, 60, y + 2, { width: W * 0.55, lineBreak: false });
+      doc.fillColor(col).text(STATUS_LABEL[v.overallStatus] || '—', 48, y + 2, { width: W, align: 'right', lineBreak: false });
+      doc.fillColor(C.muted).font('Helvetica').fontSize(9).text(String(v.notes || 'No notes').slice(0, 140), 60, y + 17, { width: W - 14, lineBreak: false });
+      doc.y = y + 42;
+    });
+  }
+  doc.fillColor(C.muted).font('Helvetica').fontSize(8).text(DISCLAIMER, 48, doc.y + 8, { width: W });
+
+  const range2 = doc.bufferedPageRange();
+  for (let i = range2.start; i < range2.start + range2.count; i++) {
+    doc.switchToPage(i);
+    doc.page.margins.bottom = 0;
+    doc.moveTo(48, doc.page.height - 40).lineTo(48 + W, doc.page.height - 40).lineWidth(0.4).strokeColor(C.line).stroke();
+    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text('ParentCare · Overall report', 48, doc.page.height - 32, { width: W, align: 'left', lineBreak: false });
+    doc.text(`Page ${i + 1} of ${range2.count}`, 48, doc.page.height - 32, { width: W, align: 'right', lineBreak: false });
+  }
+  doc.end();
+  return done;
+}
+
+module.exports = { summaryPdf, buildReportData, createFromVisit, generatePdf, renderPdf, listForUser, getForUser, pdfUrl, DISCLAIMER };

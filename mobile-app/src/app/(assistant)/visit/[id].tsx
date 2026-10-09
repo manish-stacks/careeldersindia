@@ -392,7 +392,7 @@ export default function VisitForm() {
                 {firstTable && <Segmented value={reportMode} onChange={setReportMode} items={[{ value: 'FORM', label: 'Fill values' }, { value: 'IMAGE', label: 'Upload image' }]} />}
                 {reportMode === 'FORM' ? (
                   <View style={{ marginTop: S.md, gap: S.sm }}>
-                    <Field label="Report date"><DateInput value={sh.date || ''} onChange={(d) => patchSheet(t._id, { date: d })} maximumDate={new Date()} /></Field>
+                    <Field label="Report date"><DateInput value={sh.date || new Date().toISOString().split('T')[0]} onChange={(d) => patchSheet(t._id, { date: d })} maximumDate={new Date()}  /></Field>
                     {shown.map((i) => (
                       <Field key={i.key} label={i.label}>
                         <Input value={sh.vals[i.key] || ''} onChangeText={(x) => patchSheet(t._id, { vals: { ...sh.vals, [i.key]: x } })} placeholder="Value (empty = not tested)" />

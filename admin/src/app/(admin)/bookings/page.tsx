@@ -2,7 +2,9 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { Repeat, Search } from 'lucide-react';
+import { Repeat, Search, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DeleteBookingsDialog } from '@/components/bookings/delete-bookings-dialog';
 import { getPaged } from '@/lib/api';
 import { useDebounced } from '@/lib/hooks';
 import { dateTime, inr, relative, toQuery } from '@/lib/utils';
@@ -26,6 +28,9 @@ function BookingsInner() {
   const [sort, setSort] = useState('scheduled');
   const [page, setPage] = useState(1);
   const search = useDebounced(q);
+  const [sel, setSel] = useState<string[]>([]);
+  const [confirm, setConfirm] = useState(false);
+  const toggle = (id: string) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const filters = { queue: queue === 'all' ? undefined : queue, q: search, status: queue === 'all' ? status : undefined, from, to, sort, page, limit: 25, assistantId: params.get('assistantId'), customerId: params.get('customerId'), parentId: params.get('parentId') };
   const list = useQuery({ queryKey: ['bookings', 'list', filters], queryFn: () => getPaged<Booking>(`/admin/bookings${toQuery(filters)}`), placeholderData: keepPreviousData });
@@ -36,7 +41,14 @@ function BookingsInner() {
     active: useQuery({ queryKey: ['bookings', 'count', 'active'], queryFn: () => getPaged('/admin/bookings?queue=active&limit=1') }).data?.meta.total,
   };
 
+  const pageIds = (list.data?.items || []).map((b) => b._id);
+  const allOn = pageIds.length > 0 && pageIds.every((i) => sel.includes(i));
   const columns: Column<Booking>[] = [
+    {
+      key: 'sel',
+      header: <input type="checkbox" aria-label="Select all on this page" className="h-4 w-4 accent-[#C8372D]" checked={allOn} onChange={() => setSel(allOn ? sel.filter((i) => !pageIds.includes(i)) : Array.from(new Set([...sel, ...pageIds])))} />,
+      cell: (b) => <span onClick={(e) => e.stopPropagation()}><input type="checkbox" aria-label={`Select ${b.bookingNumber}`} className="h-4 w-4 accent-[#C8372D]" checked={sel.includes(b._id)} onChange={() => toggle(b._id)} /></span>,
+    },
     {
       key: 'when',
       header: 'Visit time (IST)',
@@ -118,6 +130,13 @@ function BookingsInner() {
             <option value="created">Recently booked</option>
           </Select>
         </div>
+        {sel.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 border-b border-line bg-canvas px-5 py-3">
+            <span className="text-sm font-semibold">{sel.length} selected</span>
+            <Button size="sm" variant="danger" onClick={() => setConfirm(true)}><Trash2 className="h-4 w-4" /> Delete selected</Button>
+            <Button size="sm" variant="secondary" onClick={() => setSel([])}>Clear</Button>
+          </div>
+        )}
         {list.isError ? (
           <div className="p-5"><ErrorState error={list.error} retry={() => list.refetch()} /></div>
         ) : (
@@ -125,6 +144,7 @@ function BookingsInner() {
         )}
         <Pagination meta={list.data?.meta} onPage={setPage} />
       </div>
+      {confirm && <DeleteBookingsDialog ids={sel} onClose={() => setConfirm(false)} onDone={() => setSel([])} />}
     </>
   );
 }

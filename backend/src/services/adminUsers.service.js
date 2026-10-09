@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { User, Assistant, Parent, FamilyMember, Service, RecurringPlan } = require('../models');
+const { User, Assistant, Parent, FamilyMember, Service, RecurringPlan, Booking } = require('../models');
 const { ApiError } = require('../utils/ApiError');
 const { ROLES, ASSISTANT_VERIFICATION } = require('../config/constants');
 const { audit } = require('./audit.service');
@@ -104,16 +104,23 @@ async function createPlanFor(admin, input, req) {
     sheets: sheets.map((x) => ({ serviceId: x.serviceId, itemKeys: x.itemKeys })), status: 'ACTIVE', preferredAssistantId: input.assistantId, createdByAdmin: admin.id, notes: input.notes,
     nextOccurrenceAt: localToUtc(input.startDate, input.time, parent.timezone || 'UTC'),
   });
-  plan.endDate = recurring.localDate(plan, totalVisits - 1);
-  await plan.save();
-  await audit({ actor: admin, action: 'ADMIN_PLAN_CREATED', entityType: 'RecurringPlan', entityId: plan._id, req });
-  await notifications.notify({
-    userIds: customer._id, type: notifications.TYPES.BOOKING_CONFIRMED, title: 'Care plan active',
-    body: `Plan ${plan.planNumber} for ${parent.fullName} is active (${plan.totalVisits} visits, ${plan.startDate} to ${plan.endDate}).`, data: { recurringPlanId: String(plan._id) },
-  });
-  await recurring.recordPrepaid(plan, admin); // admin-sold plans are prepaid (paid offline)
-  await recurring.generateForPlan(plan);
-  return RecurringPlan.findById(plan._id);
+  try {
+    plan.endDate = recurring.localDate(plan, totalVisits - 1);
+    await plan.save();
+    await audit({ actor: admin, action: 'ADMIN_PLAN_CREATED', entityType: 'RecurringPlan', entityId: plan._id, req });
+    await notifications.notify({
+      userIds: customer._id, type: notifications.TYPES.BOOKING_CONFIRMED, title: 'Care plan active',
+      body: `Plan ${plan.planNumber} for ${parent.fullName} is active (${plan.totalVisits} visits, ${plan.startDate} to ${plan.endDate}).`, data: { recurringPlanId: String(plan._id) },
+    });
+    await recurring.recordPrepaid(plan, admin); // admin-sold plans are prepaid (paid offline)
+    await recurring.generateForPlan(plan);
+    return RecurringPlan.findById(plan._id);
+  } catch (err) {
+    // never leave a half-made plan (no visits, no payment) behind: a retry would create duplicates
+    await Booking.deleteMany({ recurringPlanId: plan._id, status: { $in: ['PENDING_PAYMENT', 'PENDING_ADMIN_VERIFICATION', 'VERIFIED', 'ASSISTANT_ASSIGNED'] } });
+    await RecurringPlan.deleteOne({ _id: plan._id });
+    throw err;
+  }
 }
 
 
@@ -178,10 +185,74 @@ async function deleteAssistantDocument(admin, documentId, req) {
 }
 
 
-/** Soft-delete a customer or assistant. Blocked while they still have upcoming work. History (visits, reports, payments) is kept. */
+
+/** Permanently deletes a customer and everything that belongs to them: parents, bookings, plans, visits, reports, payments, files, alerts, notifications. */
+async function purgeCustomer(admin, user, req) {
+  const M = require('../models');
+  const { storage } = require('../config/storage');
+  const uid = user._id;
+  const parentIds = (await M.Parent.find({ ownerId: uid }).select('_id').lean()).map((x) => x._id);
+  const bookingIds = (await M.Booking.find({ $or: [{ customerId: uid }, { parentId: { $in: parentIds } }] }).select('_id').lean()).map((x) => x._id);
+  const paymentIds = (await M.Payment.find({ customerId: uid }).select('_id').lean()).map((x) => x._id);
+  const visitIds = (await M.HealthVisit.find({ $or: [{ bookingId: { $in: bookingIds } }, { parentId: { $in: parentIds } }] }).select('_id').lean()).map((x) => x._id);
+
+  // uploaded photos / report images / PDFs
+  const media = await M.Media.find({ $or: [{ bookingId: { $in: bookingIds } }, { parentId: { $in: parentIds } }, { visitId: { $in: visitIds } }, { uploadedBy: uid }] }).select('key').lean();
+  await Promise.all(media.map((m) => storage.remove(m.key).catch(() => null)));
+
+  await M.HealthReport.deleteMany({ $or: [{ customerId: uid }, { bookingId: { $in: bookingIds } }] });
+  await M.HealthMeasurement.deleteMany({ $or: [{ parentId: { $in: parentIds } }, { visitId: { $in: visitIds } }] });
+  await M.HealthVisit.deleteMany({ _id: { $in: visitIds } });
+  await M.LocationPing.deleteMany({ bookingId: { $in: bookingIds } });
+  await M.EmergencyAlert.deleteMany({ $or: [{ customerId: uid }, { bookingId: { $in: bookingIds } }, { parentId: { $in: parentIds } }] });
+  await M.Refund.deleteMany({ $or: [{ paymentId: { $in: paymentIds } }, { bookingId: { $in: bookingIds } }] });
+  await M.PaymentTransaction.deleteMany({ paymentId: { $in: paymentIds } });
+  await M.Payment.deleteMany({ _id: { $in: paymentIds } });
+  await M.Booking.deleteMany({ _id: { $in: bookingIds } });
+  await M.RecurringPlan.deleteMany({ $or: [{ customerId: uid }, { parentId: { $in: parentIds } }] });
+  await M.FamilyMember.deleteMany({ $or: [{ userId: uid }, { parentId: { $in: parentIds } }] });
+  await M.Media.deleteMany({ _id: { $in: media.map((m) => m._id) } });
+  await M.Parent.deleteMany({ _id: { $in: parentIds } });
+  await M.Notification.deleteMany({ userId: uid });
+  await M.FcmToken.deleteMany({ userId: uid });
+  await M.RefreshToken.deleteMany({ userId: uid });
+  await User.deleteOne({ _id: uid });
+  await audit({ actor: admin, action: 'ADMIN_DELETED_CUSTOMER', entityType: 'User', entityId: uid, req, meta: { parents: parentIds.length, bookings: bookingIds.length } });
+  return { _id: uid };
+}
+
+/** Permanently deletes bookings and what hangs off them. Bookings already in progress are skipped. */
+async function deleteBookings(admin, ids, req) {
+  const M = require('../models');
+  const { storage } = require('../config/storage');
+  const { BOOKING_STATUS: S } = require('../config/constants');
+  const found = await M.Booking.find({ _id: { $in: ids } }).select('_id status').lean();
+  const live = [S.ON_THE_WAY, S.REACHED, S.VISIT_STARTED];
+  const bookingIds = found.filter((b) => !live.includes(b.status)).map((b) => b._id);
+  if (!bookingIds.length) throw ApiError.conflict('These visits are in progress. Finish or cancel them first.', 'BOOKING_IN_PROGRESS');
+  const visitIds = (await M.HealthVisit.find({ bookingId: { $in: bookingIds } }).select('_id').lean()).map((x) => x._id);
+  const payments = (await M.Payment.find({ bookingId: { $in: bookingIds }, purpose: 'BOOKING' }).select('_id').lean()).map((x) => x._id);
+  const media = await M.Media.find({ $or: [{ bookingId: { $in: bookingIds } }, { visitId: { $in: visitIds } }] }).select('key').lean();
+  await Promise.all(media.map((m) => storage.remove(m.key).catch(() => null)));
+  await M.HealthReport.deleteMany({ bookingId: { $in: bookingIds } });
+  await M.HealthMeasurement.deleteMany({ visitId: { $in: visitIds } });
+  await M.HealthVisit.deleteMany({ _id: { $in: visitIds } });
+  await M.LocationPing.deleteMany({ bookingId: { $in: bookingIds } });
+  await M.EmergencyAlert.deleteMany({ bookingId: { $in: bookingIds } });
+  await M.Refund.deleteMany({ $or: [{ bookingId: { $in: bookingIds } }, { paymentId: { $in: payments } }] });
+  await M.PaymentTransaction.deleteMany({ paymentId: { $in: payments } });
+  await M.Payment.deleteMany({ _id: { $in: payments } });
+  await M.Media.deleteMany({ _id: { $in: media.map((m) => m._id) } });
+  await M.Booking.deleteMany({ _id: { $in: bookingIds } });
+  await audit({ actor: admin, action: 'ADMIN_DELETED_BOOKINGS', entityType: 'Booking', entityId: bookingIds[0], req });
+  return { deleted: bookingIds.length, skipped: ids.length - bookingIds.length };
+}
+
+/** Soft-delete an assistant (customers are purged completely). Blocked while they still have upcoming work. History (visits, reports, payments) is kept. */
 async function deleteUser(admin, userId, expectedRole, req, { force = false } = {}) {
   const user = await User.findOne({ _id: userId, role: expectedRole });
   if (!user || user.status === 'DELETED') throw ApiError.notFound('User not found', 'USER_NOT_FOUND');
+  if (expectedRole === ROLES.CUSTOMER) return purgeCustomer(admin, user, req);
   const { Booking, RecurringPlan } = require('../models');
   const { BOOKING_STATUS: S } = require('../config/constants');
   const finished = [S.DRAFT, S.PENDING_PAYMENT, S.PAYMENT_SUCCESS, S.VISIT_COMPLETED, S.REPORT_GENERATED, S.COMPLETED, S.NO_SHOW, S.CANCELLED_BY_CUSTOMER, S.CANCELLED_BY_ADMIN, S.CANCELLED_BY_ASSISTANT, S.REFUNDED].filter(Boolean);
@@ -211,4 +282,4 @@ async function deleteUser(admin, userId, expectedRole, req, { force = false } = 
   return { _id: user._id };
 }
 
-module.exports = { deleteUser, updateAssistant, addAssistantDocument, deleteAssistantDocument, createCustomer, createAssistant, createParentFor, setLoginAccess, resetPassword, createPlanFor };
+module.exports = { deleteBookings, deleteUser, updateAssistant, addAssistantDocument, deleteAssistantDocument, createCustomer, createAssistant, createParentFor, setLoginAccess, resetPassword, createPlanFor };

@@ -13,5 +13,7 @@ module.exports = {
   addAssistantDocument: asyncHandler(async (req, res) => created(res, await s.addAssistantDocument(req.user, req.params.id, req.file, req.body, req), 'Document uploaded')),
   deleteAssistantDocument: asyncHandler(async (req, res) => ok(res, await s.deleteAssistantDocument(req.user, req.params.id, req), 'Document removed')),
   deleteCustomer: asyncHandler(async (req, res) => ok(res, await s.deleteUser(req.user, req.params.id, 'CUSTOMER', req, { force: req.query.force === 'true' }), 'Customer deleted')),
+  deleteBookings: asyncHandler(async (req, res) => ok(res, await s.deleteBookings(req.user, req.body.ids, req), 'Bookings deleted')),
+  deleteBooking: asyncHandler(async (req, res) => ok(res, await s.deleteBookings(req.user, [req.params.id], req), 'Booking deleted')),
   deleteAssistant: asyncHandler(async (req, res) => ok(res, await s.deleteUser(req.user, req.params.id, 'ASSISTANT', req), 'Assistant deleted')),
 };

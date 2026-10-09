@@ -11,7 +11,7 @@ const { broadcastBooking } = require('./bookingEvents');
 const { audit } = require('./audit.service');
 const { SOCKET_EVENTS } = require('../sockets/events');
 
-const TRAVEL_WINDOW_HOURS = 3; // can start travelling at most this long before the slot
+const TRAVEL_WINDOW_HOURS = process.env.NODE_ENV === 'production' ? 3 : 24 * 365;
 const ARRIVAL_RADIUS_M = 500;
 
 async function loadAssigned(user, bookingId) {

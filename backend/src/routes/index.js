@@ -139,6 +139,8 @@ adm.get('/live-map', admin.liveMap);
 
 adm.get('/bookings', validate({ query: v.admin.bookings }), admin.listBookings);
 adm.get('/bookings/:id', id, admin.getBooking);
+adm.post('/bookings/delete-many', validate({ body: v.admin.deleteBookings }), adminUsers.deleteBookings);
+adm.delete('/bookings/:id', id, adminUsers.deleteBooking);
 adm.post('/bookings/:id/verify', withBody(v.admin.verifyBooking), admin.verifyBooking);
 adm.get('/bookings/:id/eligible-assistants', id, admin.eligibleAssistants);
 adm.post('/bookings/:id/assign', withBody(v.admin.assign), admin.assign);
@@ -150,6 +152,7 @@ adm.get('/bookings/:id/visit', id, admin.bookingVisit);
 
 adm.get('/customers', validate({ query: pageQuery }), admin.listCustomers);
 adm.get('/customers/:id', id, admin.getCustomer);
+adm.get('/customers/:id/summary-pdf', id, admin.summaryPdf);
 adm.get('/parents', validate({ query: pageQuery }), admin.listParents);
 adm.get('/parents/:id', id, admin.getParent);
 adm.post('/parents/:id/photo', upload.single('file'), verifyFileContent, validate({ params: idParam }), customer.parentPhoto);

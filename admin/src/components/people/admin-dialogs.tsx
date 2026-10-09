@@ -180,13 +180,13 @@ export function RowActions({ href, name, userId, role }: { href: string; name: s
 
 export function DeleteUserDialog({ name, userId, role, onClose }: { name: string; userId: string; role: 'CUSTOMER' | 'ASSISTANT'; onClose: () => void }) {
   const label = role === 'CUSTOMER' ? 'customer' : 'assistant';
-  const [force, setForce] = useState(role === 'CUSTOMER');
-  const act = useAction(() => del(`/admin/${role === 'CUSTOMER' ? 'customers' : 'assistants'}/${userId}${force ? '?force=true' : ''}`), { success: `${name} deleted`, invalidate: [['customers'], ['assistants'], ['assistant-workload'], ['dashboard']], onDone: onClose });
+    const act = useAction(() => del(`/admin/${role === 'CUSTOMER' ? 'customers' : 'assistants'}/${userId}`), { success: `${name} deleted`, invalidate: [['customers'], ['assistants'], ['assistant-workload'], ['dashboard']], onDone: onClose });
   return (
-    <Dialog open onClose={onClose} title={`Delete ${name}?`} description={`The ${label} can no longer sign in and disappears from lists. Past visits, reports and payments are kept. Upcoming visits${role === 'CUSTOMER' ? ' and active plans' : ''} must be cancelled${role === 'ASSISTANT' ? ' or reassigned' : ''} first.`}
-      footer={<><Button variant="secondary" onClick={onClose}>Keep</Button><Button variant="danger" onClick={() => act.mutate(undefined)} loading={act.isPending}>Delete {label}</Button></>}>
-      {role === 'CUSTOMER' && <Checkbox label="Also cancel all upcoming visits and active plans" description="Cancels everything in one step; paid visits are refunded per the cancellation policy. Untick to be blocked instead if anything is still open." checked={force} onChange={setForce} />}
-      <p className="mt-3 text-sm text-ink-muted">This cannot be undone from the admin panel.</p>
+    <Dialog open onClose={onClose} title={`Delete ${name}?`} description={role === 'CUSTOMER'
+      ? 'This permanently deletes the customer and everything linked to them: parents, bookings, plans, visits, reports, payments, photos and notifications.'
+      : `The ${label} can no longer sign in and disappears from lists. Past visits, reports and payments are kept. Upcoming visits must be cancelled or reassigned first.`}
+      footer={<><Button variant="secondary" onClick={onClose}>Keep</Button><Button variant="danger" onClick={() => act.mutate(undefined)} loading={act.isPending}>{role === 'CUSTOMER' ? 'Delete everything' : `Delete ${label}`}</Button></>}>
+      <p className="mt-1 text-sm font-semibold text-danger">This cannot be undone.</p>
     </Dialog>
   );
 }

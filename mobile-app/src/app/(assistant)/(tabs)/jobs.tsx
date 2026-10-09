@@ -69,12 +69,34 @@ export default function Jobs() {
               ) : null}
               <View style={{ flex: 1 }}>
             <Card onPress={() => (sel.length ? toggle(j._id) : router.push(`/job/${j._id}`))}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: S.sm }}>
-                <T v="heading" style={{ flex: 1 }}>{j.patient.name}{j.patient.age ? `, ${j.patient.age}` : ''}</T>
-                <JobBadge status={j.status} />
-              </View>
-              <T>{j.service.name}</T>
-              <T v="small" style={{ marginTop: 4 }}>{dateLong(j.scheduledAt)}, {time(j.scheduledAt)} · {j.address.city} {j.address.pincode}</T>
+              {(() => {
+                const [wd, md = ''] = dateLong(j.scheduledAt).split(', ');
+                const [mon, day] = md.split(' ');
+                const gender = (j.patient as { gender?: string }).gender;
+                return (
+                  <View style={{ flexDirection: 'row', gap: S.md }}>
+                    <View style={{ width: 58, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: C.brandSoft, paddingVertical: S.sm }}>
+                      <T v="caption" color={C.brandDark}>{wd}</T>
+                      <T v="title" color={C.brandDark}>{day}</T>
+                      <T v="caption" color={C.brandDark}>{mon}</T>
+                    </View>
+                    <View style={{ flex: 1, gap: 3 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: S.sm }}>
+                        <T v="heading" style={{ flex: 1 }} numberOfLines={1}>{j.patient.name}</T>
+                        <JobBadge status={j.status} />
+                      </View>
+                      <T v="small">{[j.patient.age ? `${j.patient.age} yrs` : '', gender ? gender[0] + gender.slice(1).toLowerCase() : ''].filter(Boolean).join(' · ')}</T>
+                      <T>{j.service.name}</T>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="time-outline" size={15} color={C.muted} />
+                        <T v="small">{time(j.scheduledAt)}</T>
+                        <Ionicons name="location-outline" size={15} color={C.muted} style={{ marginLeft: S.sm }} />
+                        <T v="small" style={{ flex: 1 }} numberOfLines={1}>{[j.address.city, j.address.pincode].filter(Boolean).join(' ')}</T>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
             </Card>
               </View>
             </View>

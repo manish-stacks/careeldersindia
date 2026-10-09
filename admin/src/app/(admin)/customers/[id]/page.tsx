@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { PdfButton } from '@/components/reports/pdf-button';
+import { SummaryButton } from '@/components/reports/summary-button';
 import { AssignDialog } from '@/components/bookings/assign-dialog';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -148,7 +150,7 @@ export default function CustomerPage() {
             <Input aria-label="Search bookings" placeholder="Booking no. / city" value={bq} onChange={(e) => { setBq(e.target.value); setBPage(1); }} />
           </Panel>
 
-          <Panel title="Recent bookings" bodyClass="p-0" action={<Link className="link text-sm" href={`/bookings?customerId=${user._id}${parentId ? `&parentId=${parentId}` : ''}`}>Open in Bookings</Link>}>
+          <Panel title="Recent bookings" bodyClass="p-0" action={<span className="flex items-center gap-3"><SummaryButton customerId={user._id} parentId={parentId || undefined} from={from || undefined} to={to || undefined} /><Link className="link text-sm" href={`/bookings?customerId=${user._id}${parentId ? `&parentId=${parentId}` : ''}`}>Open in Bookings</Link></span>}>
             {bookings.isError ? <div className="p-5"><ErrorState error={bookings.error} retry={() => bookings.refetch()} /></div> : (
               <ul>
                 {(bookings.data?.items || []).map((b) => (
@@ -163,6 +165,7 @@ export default function CustomerPage() {
                     </Link>
                     <span className="mr-4 flex shrink-0 gap-2">
                       {b.status === 'PENDING_ADMIN_VERIFICATION' && <Button size="sm" loading={verify.isPending && verify.variables === b._id} onClick={() => verify.mutate(b._id)}><BadgeCheck className="h-4 w-4" />Verify</Button>}
+                      {(b as unknown as { reportId?: string }).reportId && <PdfButton reportId={(b as unknown as { reportId: string }).reportId} />}
                       {ASSIGNABLE.includes(b.status) && <Button size="sm" variant="secondary" onClick={() => setAssignB({ _id: b._id, current: (b as unknown as { assistantId?: { _id?: string } }).assistantId?._id })}><UserCog className="h-4 w-4" />{(b as unknown as { assistantId?: unknown }).assistantId ? 'Reassign' : 'Assign'}</Button>}
                       {CANCELLABLE.includes(b.status) && <Button size="sm" variant="danger" onClick={() => setCancelB({ _id: b._id, bookingNumber: b.bookingNumber })}>Cancel</Button>}
                     </span>
