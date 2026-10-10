@@ -45,8 +45,8 @@ const schema = z.object({
   // Deep links / universal links (served at /.well-known/*)
   APP_LINK_HOST: z.string().optional().default(''),
   APPLE_TEAM_ID: z.string().optional().default(''),
-  IOS_BUNDLE_ID: z.string().default('in.parentcare.app'),
-  ANDROID_PACKAGE: z.string().default('in.parentcare.app'),
+  IOS_BUNDLE_ID: z.string().default('in.careeldersindia.app'),
+  ANDROID_PACKAGE: z.string().default('in.careeldersindia.app'),
   ANDROID_SHA256_CERT_FINGERPRINTS: z.string().optional().default(''),
   TRIP_TOKEN_TTL_HOURS: z.coerce.number().min(1).max(24).default(12),
 });

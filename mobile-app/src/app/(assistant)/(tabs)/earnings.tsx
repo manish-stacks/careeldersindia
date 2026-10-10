@@ -46,7 +46,7 @@ export default function Earnings() {
           )}
         </Card>
       </Section>
-      <T v="caption" style={{ marginTop: S.lg }}>Payouts are settled by ParentCare to your registered bank account. Contact the care desk for payout statements.</T>
+      <T v="caption" style={{ marginTop: S.lg }}>Payouts are settled by Care Elders India to your registered bank account. Contact the care desk for payout statements.</T>
     </Screen>
   );
 }

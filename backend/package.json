@@ -1,7 +1,7 @@
 {
-  "name": "parentcare-backend",
+  "name": "careeldersindia-backend",
   "version": "1.0.0",
-  "description": "ParentCare — senior health visit platform API (Express monolith)",
+  "description": "Care Elders India — senior health visit platform API (Express monolith)",
   "main": "server.js",
   "private": true,
   "engines": {

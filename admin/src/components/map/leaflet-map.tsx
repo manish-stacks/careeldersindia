@@ -12,7 +12,7 @@ const pin = (kind: MapPoint['kind'], stale?: boolean) =>
     iconAnchor: [15, 15],
     html:
       kind === 'assistant'
-        ? `<span style="display:flex;width:30px;height:30px;border-radius:50%;background:${stale ? '#8A929C' : '#C8352E'};border:3px solid #fff;box-shadow:0 2px 8px rgba(31,35,40,.35);align-items:center;justify-content:center;color:#fff;font:600 12px Figtree,sans-serif">&#9679;</span>`
+        ? `<span style="display:flex;width:30px;height:30px;border-radius:50%;background:${stale ? '#8A929C' : '#0E5A8A'};border:3px solid #fff;box-shadow:0 2px 8px rgba(31,35,40,.35);align-items:center;justify-content:center;color:#fff;font:600 12px Figtree,sans-serif">&#9679;</span>`
         : `<span style="display:flex;width:26px;height:26px;border-radius:8px;background:#fff;border:2px solid #1F2328;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F2328" stroke-width="2.4"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>`,
   });
 
@@ -34,7 +34,7 @@ export default function LeafletMap({ points, lines = [], height = 360 }: { point
     <MapContainer center={center} zoom={points.length ? 12 : 5} style={{ height, width: '100%' }} scrollWheelZoom={false}>
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {lines.map((l, i) => (
-        <Polyline key={i} positions={l} pathOptions={{ color: '#C8352E', weight: 3, opacity: 0.6, dashArray: '6 6' }} />
+        <Polyline key={i} positions={l} pathOptions={{ color: '#0E5A8A', weight: 3, opacity: 0.6, dashArray: '6 6' }} />
       ))}
       {points.map((p) => (
         <Marker key={p.id} position={[p.lat, p.lng]} icon={pin(p.kind, p.stale)}>
@@ -42,7 +42,7 @@ export default function LeafletMap({ points, lines = [], height = 360 }: { point
             <strong>{p.label}</strong>
             {p.sub && <div>{p.sub}</div>}
             {p.href && (
-              <a href={p.href} style={{ color: '#C8352E' }}>
+              <a href={p.href} style={{ color: '#0E5A8A' }}>
                 Open booking
               </a>
             )}

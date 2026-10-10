@@ -107,7 +107,7 @@ export default function JobScreen() {
 
       {mode === 'background' && (
         <View style={{ marginTop: S.md }}>
-          <Notice tone="brand" icon="radio" title="Sharing your location" body={`Works with the app closed${isAndroid ? ' (keep the ParentCare notification)' : ''}. Stops when you tap “I've arrived”.`} action={isAndroid ? <Button title="Battery settings" variant="ghost" size="md" style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} onPress={openAppSettings} /> : undefined} />
+          <Notice tone="brand" icon="radio" title="Sharing your location" body={`Works with the app closed${isAndroid ? ' (keep the Care Elders India notification)' : ''}. Stops when you tap “I've arrived”.`} action={isAndroid ? <Button title="Battery settings" variant="ghost" size="md" style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} onPress={openAppSettings} /> : undefined} />
         </View>
       )}
       {mode === 'foreground' && (

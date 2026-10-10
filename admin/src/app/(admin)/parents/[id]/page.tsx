@@ -79,11 +79,11 @@ export default function ParentPage() {
                     <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E3E6EA', fontSize: 13 }} formatter={(v: number) => `${v} ${meta.unit}`} />
                     {metric === 'BP' ? (
                       <>
-                        <Line type="monotone" dataKey="BP_SYSTOLIC" name="Systolic" stroke="#C8352E" strokeWidth={2.5} dot={{ r: 4 }} />
+                        <Line type="monotone" dataKey="BP_SYSTOLIC" name="Systolic" stroke="#0E5A8A" strokeWidth={2.5} dot={{ r: 4 }} />
                         <Line type="monotone" dataKey="BP_DIASTOLIC" name="Diastolic" stroke="#1F2328" strokeWidth={2} dot={{ r: 3 }} />
                       </>
                     ) : (
-                      <Line type="monotone" dataKey={metric} name={meta.label} stroke="#C8352E" strokeWidth={2.5} dot={{ r: 4 }} />
+                      <Line type="monotone" dataKey={metric} name={meta.label} stroke="#0E5A8A" strokeWidth={2.5} dot={{ r: 4 }} />
                     )}
                   </LineChart>
                 </ResponsiveContainer>

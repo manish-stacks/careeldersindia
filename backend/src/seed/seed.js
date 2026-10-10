@@ -91,7 +91,7 @@ async function main() {
     const collections = await mongoose.connection.db.collections();
     for (const c of collections) await c.deleteMany({});
     log(`Reset: cleared ${collections.length} collections`);
-  } else if (await M.User.exists({ email: 'admin@parentcare.in' })) {
+  } else if (await M.User.exists({ email: 'admin@careeldersindia.com' })) {
     log('Seed data already present. Run `npm run seed:reset` to start fresh.');
     return;
   }
@@ -147,12 +147,12 @@ async function main() {
 
   // ---------------------------------------------------------------- users
   const [adminHash, custHash, asstHash] = await Promise.all([hashPassword('Admin@12345'), hashPassword('Customer@123'), hashPassword('Assistant@123')]);
-  const admin = await M.User.create({ name: 'Kavya Iyer', email: 'admin@parentcare.in', mobile: '+919810000001', role: 'ADMIN', passwordHash: adminHash });
+  const admin = await M.User.create({ name: 'Kavya Iyer', email: 'admin@careeldersindia.com', mobile: '+919810000001', role: 'ADMIN', passwordHash: adminHash });
   const rohan = await M.User.create({ name: 'Rohan Mehta', email: 'rohan@example.com', mobile: '+14155550123', country: 'US', timezone: 'America/New_York', role: 'CUSTOMER', passwordHash: custHash });
   const priya = await M.User.create({ name: 'Priya Nair', email: 'priya@example.com', mobile: '+447700900123', country: 'GB', timezone: 'Europe/London', role: 'CUSTOMER', passwordHash: custHash });
-  const neha = await M.User.create({ name: 'Neha Sharma', email: 'neha@parentcare.in', mobile: '+919810000011', role: 'ASSISTANT', passwordHash: asstHash });
-  const arjun = await M.User.create({ name: 'Arjun Menon', email: 'arjun@parentcare.in', mobile: '+919810000012', role: 'ASSISTANT', passwordHash: asstHash });
-  const vikram = await M.User.create({ name: 'Vikram Singh', email: 'vikram@parentcare.in', mobile: '+919810000013', role: 'ASSISTANT', passwordHash: asstHash });
+  const neha = await M.User.create({ name: 'Neha Sharma', email: 'neha@careeldersindia.com', mobile: '+919810000011', role: 'ASSISTANT', passwordHash: asstHash });
+  const arjun = await M.User.create({ name: 'Arjun Menon', email: 'arjun@careeldersindia.com', mobile: '+919810000012', role: 'ASSISTANT', passwordHash: asstHash });
+  const vikram = await M.User.create({ name: 'Vikram Singh', email: 'vikram@careeldersindia.com', mobile: '+919810000013', role: 'ASSISTANT', passwordHash: asstHash });
   log('Users: 1 admin, 2 customers, 3 assistants');
 
   const allWeek = (start, end) => [1, 2, 3, 4, 5, 6].map((day) => ({ day, start, end }));
@@ -554,7 +554,7 @@ async function main() {
     note(priya._id, 'ASSISTANT_ASSIGNED', 'Care assistant assigned', `Arjun Menon will visit Kamala Nair.`, { bookingId: String(b10._id) }, true),
     note(neha._id, 'NEW_JOB', 'New health visit', 'Sushila Mehta · Basic Health Check', { bookingId: String(b4._id) }, true),
     note(arjun._id, 'NEW_JOB', 'New health visit', 'Kamala Nair · Diabetes Care Visit', { bookingId: String(b10._id) }),
-    note(vikram._id, 'ADMIN_MESSAGE', 'Welcome to ParentCare', 'Upload your government ID to complete verification.'),
+    note(vikram._id, 'ADMIN_MESSAGE', 'Welcome to Care Elders India', 'Upload your government ID to complete verification.'),
     note(admin._id, 'URGENT_HEALTH_ALERT', 'Urgent: Kamala Nair', 'Assistant recorded urgent attention needed. Recommended: call doctor.', { bookingId: String(b9._id) }),
     note(admin._id, 'NEW_BOOKING', 'New booking', `${b5.bookingNumber} · Ramesh Mehta · Diabetes Care Visit`, { bookingId: String(b5._id) }),
     note(admin._id, 'JOB_REJECTED_BY_ASSISTANT', 'Job rejected — reassign', `Arjun Menon rejected ${b11.bookingNumber}: Family function that day, not available`, { bookingId: String(b11._id) }),
@@ -584,14 +584,14 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log(`
 ────────────────────────────────────────────────────────────
- ParentCare demo data ready
+ Care Elders India demo data ready
 ────────────────────────────────────────────────────────────
- Admin      admin@parentcare.in     Admin@12345      (admin dashboard)
+ Admin      admin@careeldersindia.com     Admin@12345      (admin dashboard)
  Customer   rohan@example.com       Customer@123     (Sushila + Ramesh)
  Customer   priya@example.com       Customer@123     (Kamala, weekly plan)
- Assistant  neha@parentcare.in      Assistant@123    APPROVED · Gurugram
- Assistant  arjun@parentcare.in     Assistant@123    APPROVED · Kochi
- Assistant  vikram@parentcare.in    Assistant@123    PENDING  · New Delhi
+ Assistant  neha@careeldersindia.com      Assistant@123    APPROVED · Gurugram
+ Assistant  arjun@careeldersindia.com     Assistant@123    APPROVED · Kochi
+ Assistant  vikram@careeldersindia.com    Assistant@123    PENDING  · New Delhi
 ────────────────────────────────────────────────────────────
  Queues: 1 pending verification · 1 verified/unassigned · 1 rejected (reassign)
          1 awaiting acceptance · 1 live (ON_THE_WAY) · 1 URGENT alert open

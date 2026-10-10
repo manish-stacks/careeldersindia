@@ -70,7 +70,7 @@ export default function Family() {
           <Button title="Send invite" loading={invite.isPending} disabled={!email.includes('@')} onPress={() => invite.mutate()} />
         </Card>
         <View style={{ marginTop: S.md }}>
-          <Notice tone="info" title="How invites work" body="If they already have a ParentCare account, access starts right away. Otherwise it starts when they sign up with this email." />
+          <Notice tone="info" title="How invites work" body="If they already have a Care Elders India account, access starts right away. Otherwise it starts when they sign up with this email." />
         </View>
       </Section>
     </Screen>

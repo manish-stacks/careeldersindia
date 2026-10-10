@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,10 +9,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth';
 import { C, S } from '@/lib/theme';
 import { Button, Field, Input, Notice, Screen, T } from '@/components/ui';
-import { Heart } from '@/components/brand';
 
 export default function Login() {
   const { signIn } = useAuth();
+  const { data: contact } = useQuery({ queryKey: ['contact'], queryFn: () => api.get<{ email?: string; phone?: string }>('/contact'), staleTime: 5 * 60_000 });
   const insets = useSafeAreaInsets();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -35,12 +37,9 @@ export default function Login() {
       <StatusBar style="light" />
       <View style={[styles.hero, { paddingTop: insets.top + S.xl }]}>
         <View style={styles.mark}>
-          <Heart />
+          <Image source={require('../../../assets/logo.png')} style={{ width: 230, height: 160 }} resizeMode="contain" accessibilityLabel="Care Elders India" />
         </View>
-        <T v="display" color="#fff" style={{ marginTop: S.lg }}>
-          ParentCare
-        </T>
-        <T color="#FBE3E1" style={{ marginTop: 4, fontSize: 17 }}>
+        <T color="#DCEBF5" style={{ marginTop: 4, fontSize: 17 }}>
           Trusted daily home care for your family, monitored from anywhere.
         </T>
       </View>
@@ -65,7 +64,12 @@ export default function Login() {
         </Link>
 
         <View style={styles.divider} />
-        <T v="small" style={{ textAlign: 'center' }}>Accounts are created by the ParentCare care desk. Contact support if you need access or cannot sign in.</T>
+        <T v="small" style={{ textAlign: 'center' }}>Accounts are created by the Care Elders India care desk. Contact support if you need access or cannot sign in.</T>
+        {contact?.email ? (
+          <Pressable onPress={() => Linking.openURL(`mailto:${contact.email}`)} style={{ alignItems: 'center', marginTop: S.sm }}>
+            <T v="small" color={C.brand} weight="semibold">{contact.email}{contact.phone ? ` · ${contact.phone}` : ''}</T>
+          </Pressable>
+        ) : null}
       </View>
     </Screen>
   );
@@ -73,7 +77,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   hero: { backgroundColor: C.brand, paddingHorizontal: S.lg, paddingBottom: S.xxl, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  mark: { width: 64, height: 64, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  mark: { alignSelf: 'flex-start', borderRadius: 18, backgroundColor: '#fff', padding: 10 },
   eye: { position: 'absolute', right: 12, top: 14 },
   divider: { height: 1, backgroundColor: C.line, marginVertical: S.xl },
 });

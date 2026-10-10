@@ -14,8 +14,8 @@ type Phase = { s: 'loading' } | { s: 'checkout'; order: Order } | { s: 'verifyin
 /** Razorpay Checkout inside a WebView — works in Expo Go and needs no native SDK. The server re-verifies every payment. */
 function checkoutHtml(o: Order) {
   const opts = {
-    key: o.keyId, order_id: o.orderId, amount: o.amount, currency: o.currency, name: 'ParentCare', description: o.description,
-    prefill: o.prefill, theme: { color: '#C8352E' }, retry: { enabled: true, max_count: 3 },
+    key: o.keyId, order_id: o.orderId, amount: o.amount, currency: o.currency, name: 'Care Elders India', description: o.description,
+    prefill: o.prefill, theme: { color: '#0E5A8A' }, retry: { enabled: true, max_count: 3 },
   };
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script></head>

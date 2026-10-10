@@ -1,6 +1,6 @@
 /**
  * Background trip sharing — keeps running when the assistant switches apps, locks the phone,
- * or (Android) swipes ParentCare away from Recents, via a location foreground service.
+ * or (Android) swipes Care Elders India away from Recents, via a location foreground service.
  *
  * Runs outside React: this module MUST be imported from the app entry (index.js) so the OS can
  * wake the JS runtime and find the task even when no screen is mounted.
@@ -12,7 +12,7 @@ import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const TRIP_TASK = 'parentcare-trip-location';
+export const TRIP_TASK = 'careeldersindia-trip-location';
 const TRIP_KEY = 'pc:trip';
 const QUEUE_KEY = 'pc:trip:queue';
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.14:5000').replace(/\/$/, ''); // same default as lib/api.ts
@@ -88,7 +88,7 @@ export async function startBackgroundUpdates(trip: Trip) {
     foregroundService: {
       notificationTitle: 'Sharing your location with the family',
       notificationBody: trip.patientName ? `On the way to ${trip.patientName}. Stops when you tap "I've arrived".` : 'Stops when you tap "I\'ve arrived".',
-      notificationColor: '#C8352E',
+      notificationColor: '#0E5A8A',
       killServiceOnDestroy: false, // keep sharing after the app is swiped away from Recents (Android)
     },
   });

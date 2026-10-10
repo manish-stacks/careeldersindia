@@ -21,5 +21,6 @@ module.exports = {
   LocationPing: require('./LocationPing'),
   EmergencyAlert: require('./EmergencyAlert'),
   AuditLog: require('./AuditLog'),
+  Setting: require('./Setting'),
   ...require('./Counter'),
 };

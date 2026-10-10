@@ -151,7 +151,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold">{current?.label || 'Admin'}</p>
-          <p className="hidden text-xs text-ink-muted sm:block">ParentCare admin</p>
+          <p className="hidden text-xs text-ink-muted sm:block">Care Elders India admin</p>
         </div>
 
         <span className={cn('hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium sm:inline-flex', connected ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn')}>

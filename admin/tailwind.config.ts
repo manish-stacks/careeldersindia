@@ -1,12 +1,12 @@
 import type { Config } from 'tailwindcss';
 
-// ParentCare tokens: warm red brand on a cool clinical grey. No purple anywhere.
+// Care Elders India tokens: blue-green brand on a cool clinical grey. No purple anywhere.
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        brand: { DEFAULT: '#C8352E', dark: '#A42A24', soft: '#FBECEA', line: '#F2C9C5' },
+        brand: { DEFAULT: '#0E5A8A', dark: '#0A4468', soft: '#E8F1F8', line: '#BCD6E8' },
         canvas: '#F7F8FA',
         ink: { DEFAULT: '#1F2328', soft: '#3A4048', muted: '#5B6470', faint: '#8A929C' },
         line: { DEFAULT: '#E3E6EA', strong: '#CDD2D8' },

@@ -159,7 +159,7 @@ export default function DashboardPage() {
                 <Tooltip cursor={{ fill: '#F7F8FA' }} contentStyle={{ borderRadius: 10, border: '1px solid #E3E6EA', fontSize: 13 }} />
                 <Bar dataKey="completed" name="Completed" stackId="a" fill="#1E7A4F" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="visits" name="All visits" fill="#E3E6EA" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="cancelled" name="Cancelled" fill="#C8352E" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cancelled" name="Cancelled" fill="#0E5A8A" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

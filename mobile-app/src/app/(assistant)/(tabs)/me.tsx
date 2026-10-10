@@ -41,7 +41,7 @@ export default function Me() {
       <Card style={{ paddingVertical: 0, marginTop: S.lg }}>
         <Row icon="log-out-outline" title="Sign out" danger last onPress={async () => (await confirm('Sign out?', 'You will stop receiving visit requests on this phone.', 'Sign out')) && signOut()} />
       </Card>
-      <T v="caption" style={{ textAlign: 'center', marginTop: S.xl }}>ParentCare {Constants.expoConfig?.version}</T>
+      <T v="caption" style={{ textAlign: 'center', marginTop: S.xl }}>Care Elders India {Constants.expoConfig?.version}</T>
     </Screen>
   );
 }

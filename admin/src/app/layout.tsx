@@ -7,8 +7,8 @@ import 'leaflet/dist/leaflet.css';
 import './globals.css';
 import { Providers } from './providers';
 
-export const metadata: Metadata = { title: { default: 'ParentCare Admin', template: '%s · ParentCare Admin' }, description: 'Operations console for ParentCare home health visits', robots: { index: false } };
-export const viewport: Viewport = { themeColor: '#C8352E' };
+export const metadata: Metadata = { title: { default: 'Care Elders India Admin', template: '%s · Care Elders India Admin' }, description: 'Operations console for Care Elders India home health visits', robots: { index: false } };
+export const viewport: Viewport = { themeColor: '#0E5A8A' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

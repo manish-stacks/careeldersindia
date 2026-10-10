@@ -67,7 +67,7 @@ export default function LoginPage() {
         <Logo />
         <div className="mx-auto w-full max-w-sm py-12">
           <h1 className="text-[28px] font-bold leading-9">Sign in to the care desk</h1>
-          <p className="mt-2 text-ink-muted">For ParentCare operations staff only.</p>
+          <p className="mt-2 text-ink-muted">For Care Elders India operations staff only.</p>
           <div className="mt-8">
             <Suspense>
               <LoginForm />

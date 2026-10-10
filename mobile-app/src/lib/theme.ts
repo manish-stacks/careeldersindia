@@ -1,9 +1,9 @@
-// ParentCare tokens — warm red on cool clinical grey. Large type, big targets: many users are 50+.
+// Care Elders India tokens — blue-green on cool clinical grey. Large type, big targets: many users are 50+.
 export const C = {
-  brand: '#C8352E',
-  brandDark: '#A42A24',
-  brandSoft: '#FBECEA',
-  brandLine: '#F2C9C5',
+  brand: '#0E5A8A',
+  brandDark: '#0A4468',
+  brandSoft: '#E8F1F8',
+  brandLine: '#BCD6E8',
   canvas: '#F7F8FA',
   card: '#FFFFFF',
   ink: '#1F2328',

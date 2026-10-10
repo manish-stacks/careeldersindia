@@ -70,7 +70,7 @@ async function createFromVisit(visit, booking, { version = 1 } = {}) {
 
 // ---- PDF -----------------------------------------------------------------------
 
-const C = { brand: '#C8352E', ink: '#1F2328', muted: '#5B6470', line: '#E3E6EA', stable: '#1E7A4F', attention: '#B45309', urgent: '#B42318', tint: '#F7F8FA' };
+const C = { brand: '#0E5A8A', ink: '#1F2328', muted: '#5B6470', line: '#E3E6EA', stable: '#1E7A4F', attention: '#B45309', urgent: '#B42318', tint: '#F7F8FA' };
 const STATUS_LABEL = { STABLE: 'Stable', NEEDS_ATTENTION: 'Needs attention', URGENT_ATTENTION: 'Urgent attention' };
 const STATUS_COLOR = { STABLE: C.stable, NEEDS_ATTENTION: C.attention, URGENT_ATTENTION: C.urgent };
 const humanise = (s) => (s ? String(s).replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase()) : '—');
@@ -88,7 +88,7 @@ function measurementRows(m = {}) {
 
 async function renderPdf(report, images) {
   const d = report.data;
-  const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true, info: { Title: `Test report ${report.reportNumber}`, Author: 'ParentCare' } });
+  const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true, info: { Title: `Test report ${report.reportNumber}`, Author: 'Care Elders India' } });
   const chunks = [];
   doc.on('data', (c) => chunks.push(c));
   const done = new Promise((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
@@ -101,7 +101,7 @@ async function renderPdf(report, images) {
 
   // Header band
   doc.rect(0, 0, PW, 64).fill(C.brand);
-  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('ParentCare', 48, 20);
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('Care Elders India', 48, 20);
   doc.font('Helvetica').fontSize(9).text('Home health care', 48, 44);
   doc.font('Helvetica-Bold').fontSize(11).text(tests.length || legacy.length ? 'TEST REPORT' : 'VISIT REPORT', 48, 22, { width: W, align: 'right' });
   doc.font('Helvetica').fontSize(9).text(`${report.reportNumber}${report.version > 1 ? ` · version ${report.version}` : ''}`, 48, 40, { width: W, align: 'right' });
@@ -221,7 +221,7 @@ async function renderPdf(report, images) {
     doc.switchToPage(i);
     doc.page.margins.bottom = 0;
     doc.moveTo(48, doc.page.height - 40).lineTo(48 + W, doc.page.height - 40).lineWidth(0.4).strokeColor(C.line).stroke();
-    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text(`ParentCare · ${report.reportNumber} · ${d.patient.name}`, 48, doc.page.height - 32, { width: W, align: 'left', lineBreak: false });
+    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text(`Care Elders India · ${report.reportNumber} · ${d.patient.name}`, 48, doc.page.height - 32, { width: W, align: 'left', lineBreak: false });
     doc.text(`Page ${i + 1} of ${range.count}`, 48, doc.page.height - 32, { width: W, align: 'right', lineBreak: false });
   }
 
@@ -318,7 +318,7 @@ async function summaryPdf({ customerId, parentId, from, to }) {
   const rows = visits.map((v) => ({ v, b: bById.get(String(v.bookingId)) })).filter((x) => x.b).sort((a, b) => new Date(a.b.scheduledAt) - new Date(b.b.scheduledAt));
   const day = (b) => new Date(`${b.scheduledLocal?.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-  const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true, info: { Title: 'Overall health report', Author: 'ParentCare' } });
+  const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true, info: { Title: 'Overall health report', Author: 'Care Elders India' } });
   const chunks = [];
   doc.on('data', (c) => chunks.push(c));
   const done = new Promise((resolve) => doc.on('end', () => resolve(Buffer.concat(chunks))));
@@ -328,7 +328,7 @@ async function summaryPdf({ customerId, parentId, from, to }) {
   const ensure = (h) => { if (doc.y + h > bottom()) { doc.addPage(); doc.y = 50; return true; } return false; };
 
   doc.rect(0, 0, PW, 64).fill(C.brand);
-  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('ParentCare', 48, 20);
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(20).text('Care Elders India', 48, 20);
   doc.font('Helvetica').fontSize(9).text('Home health care', 48, 44);
   doc.font('Helvetica-Bold').fontSize(11).text('OVERALL REPORT', 48, 22, { width: W, align: 'right' });
   doc.font('Helvetica').fontSize(9).text(`${from || 'Start'} to ${to || 'today'}`, 48, 40, { width: W, align: 'right' });
@@ -412,7 +412,7 @@ async function summaryPdf({ customerId, parentId, from, to }) {
     doc.switchToPage(i);
     doc.page.margins.bottom = 0;
     doc.moveTo(48, doc.page.height - 40).lineTo(48 + W, doc.page.height - 40).lineWidth(0.4).strokeColor(C.line).stroke();
-    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text('ParentCare · Overall report', 48, doc.page.height - 32, { width: W, align: 'left', lineBreak: false });
+    doc.fillColor(C.muted).font('Helvetica').fontSize(8).text('Care Elders India · Overall report', 48, doc.page.height - 32, { width: W, align: 'left', lineBreak: false });
     doc.text(`Page ${i + 1} of ${range2.count}`, 48, doc.page.height - 32, { width: W, align: 'right', lineBreak: false });
   }
   doc.end();

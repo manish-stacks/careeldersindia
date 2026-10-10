@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.14:5000').replace(/\/$/, '');
 const BASE = `${API_URL}/api/v1`;
-const RT_KEY = 'parentcare.refresh_token'; // SecureStore key name only (not a secret)
+const RT_KEY = 'careeldersindia.refresh_token'; // SecureStore key name only (not a secret)
 
 /** fetch that gives up after `ms` so a wrong server IP shows an error instead of hanging forever. */
 async function fetchT(url: string, init: RequestInit, ms = 15000) {

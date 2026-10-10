@@ -32,7 +32,7 @@ const SCREENS: Record<string, { roles: Role[]; href: Maker; needsId?: boolean }>
 };
 
 const ID = /^[a-f\d]{24}$/i;
-export const LINK_HOST = process.env.EXPO_PUBLIC_APP_LINK_HOST || 'parentcare.in';
+export const LINK_HOST = process.env.EXPO_PUBLIC_APP_LINK_HOST || 'careeldersindia.com';
 
 /** Screen key + optional id → in-app path for this role, or null when the role can't open it. */
 export function screenHref(screen: string | undefined, id: string | undefined, role?: Role) {
@@ -44,15 +44,15 @@ export function screenHref(screen: string | undefined, id: string | undefined, r
 
 /**
  * Turns any incoming link into an app path.
- *  parentcare://booking/<id>          → /booking/<id>
- *  https://parentcare.in/app/job/<id> → /job/<id>
+ *  careeldersindia://booking/<id>          → /booking/<id>
+ *  https://careeldersindia.com/app/job/<id> → /job/<id>
  *  …/app/s/<screen>[/<id>]            → /open?screen=…&id=…  (resolved per role after sign-in)
  *  …/app/b/<id> | j/<id> | r/<id>     → short links for SMS/WhatsApp
  */
 export function pathFromUrl(raw: string): string | null {
   try {
     let path = raw;
-    if (/^parentcare:\/\//i.test(raw)) path = '/' + raw.replace(/^parentcare:\/\/\/?/i, '');
+    if (/^careeldersindia:\/\//i.test(raw)) path = '/' + raw.replace(/^careeldersindia:\/\/\/?/i, '');
     else if (/^https?:\/\//i.test(raw)) {
       const u = new URL(raw);
       if (u.hostname !== LINK_HOST && u.hostname !== `www.${LINK_HOST}`) return null;

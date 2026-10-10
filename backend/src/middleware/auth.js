@@ -7,7 +7,7 @@ const { asyncHandler } = require('../utils/asyncHandler');
 
 function verifyAccessToken(token) {
   try {
-    return jwt.verify(token, env.JWT_ACCESS_SECRET, { issuer: 'parentcare', audience: 'parentcare-api' });
+    return jwt.verify(token, env.JWT_ACCESS_SECRET, { issuer: 'careeldersindia', audience: 'careeldersindia-api' });
   } catch (err) {
     if (err.name === 'TokenExpiredError') throw ApiError.unauthorized('Session expired', 'TOKEN_EXPIRED');
     throw ApiError.unauthorized('Invalid token', 'INVALID_TOKEN');

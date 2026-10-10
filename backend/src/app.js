@@ -54,7 +54,7 @@ function createApp() {
 
   const spec = buildSpec();
   app.get('/api-docs.json', (_req, res) => res.json(spec));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec, { customSiteTitle: 'ParentCare API', swaggerOptions: { persistAuthorization: true } }));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec, { customSiteTitle: 'Care Elders India API', swaggerOptions: { persistAuthorization: true } }));
 
   app.use('/api/v1', apiLimiter, router);
 

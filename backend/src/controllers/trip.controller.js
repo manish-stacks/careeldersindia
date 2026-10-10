@@ -56,9 +56,9 @@ module.exports = {
 
   /** When the app isn't installed, a universal link lands here. */
   appFallback: (req, res) => {
-    const deep = `parentcare://${req.path.replace(/^\/app\/?/, '')}`;
-    res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ParentCare</title>
-<style>body{font-family:system-ui,sans-serif;background:#F7F8FA;color:#1F2328;display:grid;place-items:center;min-height:100vh;margin:0}main{max-width:360px;padding:24px;text-align:center}a{display:block;margin-top:12px;padding:14px;border-radius:12px;background:#C8352E;color:#fff;text-decoration:none;font-weight:600}</style></head>
-<body><main><h1>ParentCare</h1><p>Open this in the ParentCare app.</p><a href="${deep.replace(/"/g, '')}">Open the app</a></main></body></html>`);
+    const deep = `careeldersindia://${req.path.replace(/^\/app\/?/, '')}`;
+    res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Care Elders India</title>
+<style>body{font-family:system-ui,sans-serif;background:#F7F8FA;color:#1F2328;display:grid;place-items:center;min-height:100vh;margin:0}main{max-width:360px;padding:24px;text-align:center}a{display:block;margin-top:12px;padding:14px;border-radius:12px;background:#0E5A8A;color:#fff;text-decoration:none;font-weight:600}</style></head>
+<body><main><h1>Care Elders India</h1><p>Open this in the Care Elders India app.</p><a href="${deep.replace(/"/g, '')}">Open the app</a></main></body></html>`);
   },
 };

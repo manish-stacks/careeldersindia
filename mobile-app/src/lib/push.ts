@@ -11,8 +11,8 @@ export const pushSupported = () => Device.isDevice && Constants.executionEnviron
 
 export async function setupChannels() {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync('default', { name: 'Visit updates', importance: Notifications.AndroidImportance.HIGH, lightColor: '#C8352E' });
-  await Notifications.setNotificationChannelAsync('urgent', { name: 'Urgent alerts', importance: Notifications.AndroidImportance.MAX, vibrationPattern: [0, 400, 200, 400], lightColor: '#C8352E' });
+  await Notifications.setNotificationChannelAsync('default', { name: 'Visit updates', importance: Notifications.AndroidImportance.HIGH, lightColor: '#0E5A8A' });
+  await Notifications.setNotificationChannelAsync('urgent', { name: 'Urgent alerts', importance: Notifications.AndroidImportance.MAX, vibrationPattern: [0, 400, 200, 400], lightColor: '#0E5A8A' });
 }
 
 /** Registers the native FCM/APNs token with our server (the backend sends through Firebase Admin). */

@@ -197,7 +197,7 @@ function RoleDialog({ target, modules, mine, onClose }: { target: Role | 'new'; 
             {(['view', 'manage'] as const).map((a) => {
               const p = `${m.key}.${a}`;
               return m.actions.includes(a) ? (
-                <input key={a} type="checkbox" aria-label={`${m.label} ${a}`} className="h-4 w-4 accent-[#C8352E]" disabled={!allowed(p)} checked={perms.has(p)} onChange={(e) => flip(p, e.target.checked)} />
+                <input key={a} type="checkbox" aria-label={`${m.label} ${a}`} className="h-4 w-4 accent-[#0E5A8A]" disabled={!allowed(p)} checked={perms.has(p)} onChange={(e) => flip(p, e.target.checked)} />
               ) : <span key={a} className="text-ink-faint">–</span>;
             })}
           </div>

@@ -1,4 +1,4 @@
-# ParentCare mobile (Expo SDK 57)
+# Care Elders India mobile (Expo SDK 57)
 
 One app, two roles. The server decides which one after sign-in:
 
@@ -15,7 +15,7 @@ npx expo start                # scan with Expo Go (SDK 57) or a dev build
 
 Backend must be reachable from the phone. In `backend/.env` also set `API_PUBLIC_URL=http://<your-LAN-IP>:5000` so photo/PDF links open on the phone (the app rewrites `localhost` links as a fallback).
 
-Demo logins (after `npm run seed:reset` in backend): `rohan@example.com` / `Customer@123` (customer), `neha@parentcare.in` / `Assistant@123` (assistant with a live visit), `vikram@parentcare.in` / `Assistant@123` (pending verification).
+Demo logins (after `npm run seed:reset` in backend): `rohan@example.com` / `Customer@123` (customer), `neha@careeldersindia.com` / `Assistant@123` (assistant with a live visit), `vikram@careeldersindia.com` / `Assistant@123` (pending verification).
 
 ## What works where
 
@@ -47,10 +47,10 @@ Accepted links (all routed by `src/app/+native-intent.tsx` → `src/lib/links.ts
 
 | Link | Opens |
 |---|---|
-| `parentcare://booking/<id>` · `https://<host>/app/booking/<id>` · `https://<host>/app/b/<id>` | customer visit |
-| `parentcare://job/<id>` · `…/app/j/<id>` | assistant job |
+| `careeldersindia://booking/<id>` · `https://<host>/app/booking/<id>` · `https://<host>/app/b/<id>` | customer visit |
+| `careeldersindia://job/<id>` · `…/app/j/<id>` | assistant job |
 | `…/app/r/<id>` · `…/app/p/<id>` | report · plan |
-| `…/app/s/<screen>[/<id>]` or `parentcare://open?screen=<screen>&id=<id>` | any registered screen, resolved for the signed-in role |
+| `…/app/s/<screen>[/<id>]` or `careeldersindia://open?screen=<screen>&id=<id>` | any registered screen, resolved for the signed-in role |
 
 Links opened while signed out are remembered and opened right after sign-in. Wrong-role links fall back to Home/Today.
 

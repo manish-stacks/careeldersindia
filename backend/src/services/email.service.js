@@ -25,9 +25,9 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 
 function render(title, body) {
   return `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;border:1px solid #eee;border-radius:10px;overflow:hidden">
-<div style="background:#C8372D;color:#fff;padding:14px 20px;font-size:18px;font-weight:bold">ParentCare</div>
+<div style="background:#0E5A8A;color:#fff;padding:14px 20px;font-size:18px;font-weight:bold">Care Elders India</div>
 <div style="padding:20px"><h3 style="margin:0 0 10px">${esc(title)}</h3><p style="margin:0;line-height:1.5;color:#333">${esc(body)}</p></div>
-<div style="padding:12px 20px;background:#f7f7f7;color:#888;font-size:12px">This is an automatic message from ParentCare. Please open the app for details.</div></div>`;
+<div style="padding:12px 20px;background:#f7f7f7;color:#888;font-size:12px">This is an automatic message from Care Elders India. Please open the app for details.</div></div>`;
 }
 
 /** Fire-and-forget: never throws, never blocks the request. */

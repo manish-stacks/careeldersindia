@@ -18,6 +18,7 @@ const trip = require('../controllers/trip.controller');
 const adminUsers = require('../controllers/adminUsers.controller');
 const vAU = require('../validators/adminUsers');
 const sheet = require('../controllers/sheet.controller');
+const settings = require('../controllers/settings.controller');
 const { tripLimiter } = require('../middleware/rateLimit');
 
 const { idParam, pageQuery, objectId } = v.common;
@@ -44,6 +45,7 @@ authR.patch('/me', authenticate, validate({ body: v.auth.updateMe }), auth.updat
 router.use('/auth', authR);
 
 // ---------------------------------------------------------------- public
+router.get('/contact', settings.getContact); // public contact details (edited in admin → Settings)
 router.get('/services', customer.listServices);
 router.get('/services/:id', id, customer.getService);
 router.get('/media/file', common.mediaFile); // HMAC-signed, no bearer
@@ -226,6 +228,8 @@ adm.delete('/roles/:id', id, staff.deleteRole);
 adm.get('/staff', staff.listStaff);
 adm.post('/staff', validate({ body: staff.schemas.staff }), staff.createStaff);
 adm.patch('/staff/:id', withBody(staff.schemas.staffPatch), staff.updateStaff);
+adm.get('/settings/contact', settings.getContact);
+adm.put('/settings/contact', validate({ body: settings.contactSchema }), settings.updateContact);
 router.use('/admin', adm);
 
 module.exports = { router, webhookHandler: payment.webhook, wellKnown: trip };

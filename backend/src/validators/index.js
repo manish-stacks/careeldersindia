@@ -218,7 +218,7 @@ const admin = {
       // What opens when the notification is tapped
       screen: z.enum(Object.keys(APP_SCREENS)).optional(),
       recordId: objectId.optional(),
-      url: z.string().trim().max(500).regex(/^(https:\/\/|parentcare:\/\/)/, 'Link must start with https:// or parentcare://').optional(),
+      url: z.string().trim().max(500).regex(/^(https:\/\/|careeldersindia:\/\/)/, 'Link must start with https:// or careeldersindia://').optional(),
     })
     .refine((v) => v.audience !== 'USERS' || v.userIds?.length || v.emails?.length, { message: 'Choose at least one person', path: ['emails'] })
     .refine((v) => !v.screen || !APP_SCREENS[v.screen].param || v.recordId, { message: 'This screen needs a record id', path: ['recordId'] })

@@ -111,7 +111,7 @@ function Compose() {
     invalidate: [['notifications', 'broadcasts']],
     onDone: () => { setTitle(''); setBody(''); setConfirm(false); setTarget('none'); setScreen(''); setRecordId(''); setUrl(''); },
   });
-  const targetOk = target === 'none' || (target === 'screen' && !!chosen && (!chosen.param || /^[a-f\d]{24}$/i.test(recordId.trim()))) || (target === 'url' && /^(https:\/\/|parentcare:\/\/)/.test(url.trim()));
+  const targetOk = target === 'none' || (target === 'screen' && !!chosen && (!chosen.param || /^[a-f\d]{24}$/i.test(recordId.trim()))) || (target === 'url' && /^(https:\/\/|careeldersindia:\/\/)/.test(url.trim()));
   const valid = title.trim().length >= 3 && body.trim().length >= 3 && targetOk && (audience !== 'USERS' || emailList.length > 0);
   const audienceLabel = audience === 'USERS' ? `${emailList.length} selected ${emailList.length === 1 ? 'person' : 'people'}` : AUDIENCE[audience].toLowerCase();
 
@@ -126,7 +126,7 @@ function Compose() {
         </Field>
         {audience === 'USERS' && (
           <Field label="Emails" hint="Separate with commas or new lines. Customers and assistants only.">
-            <Textarea value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="rohan@example.com, neha@parentcare.in" />
+            <Textarea value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="rohan@example.com, neha@careeldersindia.com" />
           </Field>
         )}
         <Field label="Title" hint={`${title.length}/80`}><Input maxLength={80} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Visits during Diwali week" /></Field>
@@ -155,8 +155,8 @@ function Compose() {
           </div>
         )}
         {target === 'url' && (
-          <Field label="Link" hint="https:// opens the browser (or the app, for parentcare.in/app/… links). parentcare:// opens an app screen.">
-            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://parentcare.in/app/plans" />
+          <Field label="Link" hint="https:// opens the browser (or the app, for careeldersindia.com/app/… links). careeldersindia:// opens an app screen.">
+            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://careeldersindia.com/app/plans" />
           </Field>
         )}
         {confirm ? (

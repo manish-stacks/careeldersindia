@@ -46,8 +46,8 @@ function BookingsInner() {
   const columns: Column<Booking>[] = [
     {
       key: 'sel',
-      header: <input type="checkbox" aria-label="Select all on this page" className="h-4 w-4 accent-[#C8372D]" checked={allOn} onChange={() => setSel(allOn ? sel.filter((i) => !pageIds.includes(i)) : Array.from(new Set([...sel, ...pageIds])))} />,
-      cell: (b) => <span onClick={(e) => e.stopPropagation()}><input type="checkbox" aria-label={`Select ${b.bookingNumber}`} className="h-4 w-4 accent-[#C8372D]" checked={sel.includes(b._id)} onChange={() => toggle(b._id)} /></span>,
+      header: <input type="checkbox" aria-label="Select all on this page" className="h-4 w-4 accent-[#0E5A8A]" checked={allOn} onChange={() => setSel(allOn ? sel.filter((i) => !pageIds.includes(i)) : Array.from(new Set([...sel, ...pageIds])))} />,
+      cell: (b) => <span onClick={(e) => e.stopPropagation()}><input type="checkbox" aria-label={`Select ${b.bookingNumber}`} className="h-4 w-4 accent-[#0E5A8A]" checked={sel.includes(b._id)} onChange={() => toggle(b._id)} /></span>,
     },
     {
       key: 'when',

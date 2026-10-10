@@ -77,9 +77,9 @@ export default function Today() {
 
         {next && (
           <Card onPress={() => router.push(`/job/${next._id}`)} style={styles.next}>
-            <T v="small" color="#FBE3E1">Next visit · {time(next.scheduledAt)}</T>
+            <T v="small" color="#DCEBF5">Next visit · {time(next.scheduledAt)}</T>
             <T v="title" color="#fff">{next.patient.name}</T>
-            <T color="#FBE3E1">{next.address.line1}, {next.address.city}</T>
+            <T color="#DCEBF5">{next.address.line1}, {next.address.city}</T>
             <T weight="semibold" color="#fff" style={{ marginTop: S.md }}>
               {next.status === 'ASSISTANT_ASSIGNED' ? 'Review and accept ›' : next.status === 'ASSISTANT_ACCEPTED' ? 'Start travel ›' : next.status === 'VISIT_STARTED' ? 'Continue recording ›' : 'Open ›'}
             </T>

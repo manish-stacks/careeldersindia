@@ -8,8 +8,8 @@ const { sha256, randomToken } = require('../utils/crypto');
 function signAccessToken(user) {
   return jwt.sign({ sub: String(user._id), role: user.role }, env.JWT_ACCESS_SECRET, {
     expiresIn: env.JWT_ACCESS_TTL,
-    issuer: 'parentcare',
-    audience: 'parentcare-api',
+    issuer: 'careeldersindia',
+    audience: 'careeldersindia-api',
   });
 }
 
@@ -19,13 +19,13 @@ function signAccessToken(user) {
  */
 function signTripToken({ assistantId, bookingId }) {
   const expiresIn = env.TRIP_TOKEN_TTL_HOURS * 3600;
-  const token = jwt.sign({ sub: String(assistantId), bid: String(bookingId), typ: 'trip' }, env.JWT_ACCESS_SECRET, { expiresIn, issuer: 'parentcare', audience: 'parentcare-trip' });
+  const token = jwt.sign({ sub: String(assistantId), bid: String(bookingId), typ: 'trip' }, env.JWT_ACCESS_SECRET, { expiresIn, issuer: 'careeldersindia', audience: 'careeldersindia-trip' });
   return { token, expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString() };
 }
 
 function verifyTripToken(token) {
   try {
-    const p = jwt.verify(token, env.JWT_ACCESS_SECRET, { issuer: 'parentcare', audience: 'parentcare-trip' });
+    const p = jwt.verify(token, env.JWT_ACCESS_SECRET, { issuer: 'careeldersindia', audience: 'careeldersindia-trip' });
     if (p.typ !== 'trip') throw new Error('wrong type');
     return { assistantId: p.sub, bookingId: p.bid };
   } catch {

@@ -90,7 +90,7 @@ export default function CustomerHome() {
             <T v="title" color="#fff" style={{ marginTop: S.sm }}>
               {live.parentSnapshot.fullName}
             </T>
-            <T color="#FBE3E1">
+            <T color="#DCEBF5">
               {live.serviceSnapshot.name}
               {live.assistant?.name ? ` with ${live.assistant.name}` : ''}
             </T>

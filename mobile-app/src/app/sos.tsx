@@ -14,7 +14,7 @@ import { Button, Card, Chip, Field, Input, Notice, Screen, T } from '@/component
 const EMERGENCY = '112';
 const ACTIVE = ['ASSISTANT_ACCEPTED', 'ON_THE_WAY', 'REACHED', 'VISIT_STARTED'];
 
-/** Emergency: call 112 first, then alert the ParentCare care desk (which calls back and escalates). */
+/** Emergency: call 112 first, then alert the Care Elders India care desk (which calls back and escalates). */
 export default function Sos() {
   const { user } = useAuth();
   const isAssistant = user?.role === 'ASSISTANT';
@@ -50,11 +50,11 @@ export default function Sos() {
     <Screen>
       <Card tone="danger">
         <T v="heading" color={C.danger}>Is someone in immediate danger?</T>
-        <T style={{ marginTop: 4 }}>Call emergency services first. ParentCare does not replace an ambulance.</T>
+        <T style={{ marginTop: 4 }}>Call emergency services first. Care Elders India does not replace an ambulance.</T>
         <Button title={`Call ${EMERGENCY} (India emergency)`} variant="dangerSolid" icon="call" style={{ marginTop: S.md }} onPress={() => Linking.openURL(`tel:${EMERGENCY}`)} />
       </Card>
 
-      <T v="heading" style={{ marginTop: S.xl, marginBottom: S.sm }}>Alert the ParentCare care desk</T>
+      <T v="heading" style={{ marginTop: S.xl, marginBottom: S.sm }}>Alert the Care Elders India care desk</T>
       <T v="small" style={{ marginBottom: S.lg }}>We&apos;ll call you back, contact the family and help arrange care.{isAssistant ? ' Your location is shared with the alert.' : ''}</T>
       {!!visits.data?.length && (
         <Field label="Which visit is this about?">

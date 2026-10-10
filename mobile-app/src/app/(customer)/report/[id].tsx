@@ -22,7 +22,7 @@ export default function ReportScreen() {
     try {
       const r = await api.get<{ url: string; fileName: string }>(`/reports/${id}/pdf`);
       const url = fixUrl(r.url)!;
-      if (share) await Share.share({ message: `ParentCare visit report (link valid for 15 minutes): ${url}`, url });
+      if (share) await Share.share({ message: `Care Elders India visit report (link valid for 15 minutes): ${url}`, url });
       else await WebBrowser.openBrowserAsync(url);
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Could not open PDF', 'error');

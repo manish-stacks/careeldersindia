@@ -146,7 +146,7 @@ const schemas = {
   Error: errorBody,
   RegisterCustomer: { type: 'object', required: ['name', 'email', 'password'], properties: { name: { type: 'string' }, email: { type: 'string' }, mobile: { type: 'string', example: '+14155550123' }, password: { type: 'string' }, country: { type: 'string', example: 'US' }, timezone: { type: 'string', example: 'America/New_York' } } },
   RegisterAssistant: { type: 'object', required: ['name', 'email', 'mobile', 'password', 'gender', 'dateOfBirth', 'address'], properties: { name: { type: 'string' }, email: { type: 'string' }, mobile: { type: 'string' }, password: { type: 'string' }, gender: { type: 'string', enum: ['MALE', 'FEMALE', 'OTHER'] }, dateOfBirth: { type: 'string', format: 'date' }, address: { type: 'object' }, serviceAreas: { type: 'array', items: { type: 'object' } } } },
-  Login: { type: 'object', required: ['identifier', 'password'], properties: { identifier: { type: 'string', example: 'admin@parentcare.in' }, password: { type: 'string', example: 'Admin@12345' }, portal: { type: 'string', enum: ['ADMIN', 'MOBILE'] } } },
+  Login: { type: 'object', required: ['identifier', 'password'], properties: { identifier: { type: 'string', example: 'admin@careeldersindia.com' }, password: { type: 'string', example: 'Admin@12345' }, portal: { type: 'string', enum: ['ADMIN', 'MOBILE'] } } },
   Parent: { type: 'object', required: ['fullName', 'gender', 'dateOfBirth', 'address', 'emergencyContacts'], properties: { fullName: { type: 'string' }, gender: { type: 'string' }, dateOfBirth: { type: 'string', format: 'date' }, address: { type: 'object' }, latitude: { type: 'number' }, longitude: { type: 'number' }, medicines: { type: 'array', items: { type: 'object' } }, emergencyContacts: { type: 'array', items: { type: 'object' } } } },
   CreateBooking: { type: 'object', required: ['parentId', 'serviceId', 'date', 'time'], properties: { parentId: { type: 'string' }, serviceId: { type: 'string' }, date: { type: 'string', example: '2026-10-02' }, time: { type: 'string', example: '10:30', description: 'IST wall-clock time' }, customerNotes: { type: 'string' } } },
   VisitDraft: { type: 'object', properties: { measurements: { type: 'object', example: { bp: { systolic: 128, diastolic: 82 }, pulse: 76, spo2: 97, temperature: { value: 98.4, unit: 'F' } } }, symptoms: { type: 'array', items: { type: 'string' } }, medicationStatus: { type: 'array', items: { type: 'object' } }, notes: { type: 'string' }, overallStatus: { type: 'string', enum: ['STABLE', 'NEEDS_ATTENTION', 'URGENT_ATTENTION'] } } },
@@ -182,7 +182,7 @@ function buildSpec() {
   return {
     openapi: '3.0.3',
     info: {
-      title: 'ParentCare API',
+      title: 'Care Elders India API',
       version: '1.0.0',
       description:
         'Senior health visit platform. All times are stored in UTC; visits are scheduled in India time (Asia/Kolkata). Money is in paise (INR). Health data are recorded measurements/observations — not a diagnosis.\n\nSocket.IO: connect with `auth: { token }`. Rooms: customer:{userId}, assistant:{userId}, booking:{id}, admin. Client events: booking:subscribe, booking:unsubscribe, location:update.',

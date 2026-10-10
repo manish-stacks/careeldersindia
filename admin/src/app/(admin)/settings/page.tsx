@@ -1,7 +1,7 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { ExternalLink } from 'lucide-react';
-import { API_URL, post, setAccessToken } from '@/lib/api';
+import { API_URL, get, post, put, setAccessToken } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useSocket } from '@/lib/socket';
 import { useToast } from '@/components/ui/toast';
@@ -9,6 +9,37 @@ import { dateTime } from '@/lib/utils';
 import { KeyVal, PageHeader, Panel } from '@/components/ui/misc';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/form';
+
+type Contact = { email: string; phone: string; whatsapp: string; website: string; hours: string; address: string };
+const EMPTY: Contact = { email: '', phone: '', whatsapp: '', website: '', hours: '', address: '' };
+
+function ContactPanel() {
+  const toast = useToast();
+  const [c, setC] = useState<Contact>(EMPTY);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { get<Contact>('/admin/settings/contact').then((d) => setC({ ...EMPTY, ...d })).catch(() => {}); }, []);
+  const set = (k: keyof Contact) => (e: { target: { value: string } }) => setC((p) => ({ ...p, [k]: e.target.value }));
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try { await put('/admin/settings/contact', c); toast.success('Contact details saved', 'The mobile app shows these to customers.'); }
+    catch (err) { toast.error('Could not save', err instanceof Error ? err.message : undefined); }
+    finally { setBusy(false); }
+  }
+  return (
+    <Panel title="Contact details" className="lg:col-span-2">
+      <form onSubmit={save} className="grid gap-4 md:grid-cols-2">
+        <Field label="Support email"><Input type="email" value={c.email} onChange={set('email')} placeholder="support@careeldersindia.com" /></Field>
+        <Field label="Support phone"><Input value={c.phone} onChange={set('phone')} placeholder="+91 98XXXXXXXX" /></Field>
+        <Field label="WhatsApp number"><Input value={c.whatsapp} onChange={set('whatsapp')} placeholder="+91 98XXXXXXXX" /></Field>
+        <Field label="Website"><Input value={c.website} onChange={set('website')} placeholder="https://careeldersindia.com" /></Field>
+        <Field label="Working hours"><Input value={c.hours} onChange={set('hours')} placeholder="Mon–Sat, 9 am – 7 pm" /></Field>
+        <Field label="Office address"><Input value={c.address} onChange={set('address')} /></Field>
+        <div className="flex justify-end md:col-span-2"><Button type="submit" loading={busy}>Save contact details</Button></div>
+      </form>
+    </Panel>
+  );
+}
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -54,6 +85,7 @@ export default function SettingsPage() {
             <div className="flex justify-end"><Button type="submit" loading={busy} disabled={!current || !strong || !again}>Change password</Button></div>
           </form>
         </Panel>
+        <ContactPanel />
         <Panel title="System" className="lg:col-span-2">
           <KeyVal cols={3} items={[
             ['API', API_URL],

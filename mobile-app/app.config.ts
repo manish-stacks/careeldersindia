@@ -3,20 +3,20 @@ import type { ExpoConfig } from 'expo/config';
 // Google Maps key is only needed for Android release/dev builds (Expo Go ships its own).
 const googleMapsKey = process.env.GOOGLE_MAPS_ANDROID_KEY;
 // Universal / App Links host — must serve /.well-known/apple-app-site-association and assetlinks.json
-const linkHost = process.env.EXPO_PUBLIC_APP_LINK_HOST || 'parentcare.in';
-const tripReason = 'ParentCare shares your location with the family and care desk only while you travel to a booked visit, including when the app is closed. Sharing stops when you arrive.';
+const linkHost = process.env.EXPO_PUBLIC_APP_LINK_HOST || 'careeldersindia.com';
+const tripReason = 'Care Elders India shares your location with the family and care desk only while you travel to a booked visit, including when the app is closed. Sharing stops when you arrive.';
 
 const config: ExpoConfig = {
-  name: 'ParentCare',
-  slug: 'parentcare',
-  scheme: 'parentcare',
+  name: 'Care Elders India',
+  slug: 'careeldersindia',
+  scheme: 'careeldersindia',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
   ios: {
     supportsTablet: false,
-    bundleIdentifier: 'in.parentcare.app',
+    bundleIdentifier: 'in.careeldersindia.app',
     associatedDomains: [`applinks:${linkHost}`],
     infoPlist: {
       UIBackgroundModes: ['location', 'remote-notification'],
@@ -27,9 +27,9 @@ const config: ExpoConfig = {
     },
   },
   android: {
-    package: 'in.parentcare.app',
+    package: 'in.careeldersindia.app',
     adaptiveIcon: {
-      backgroundColor: '#C8352E',
+      backgroundColor: '#FFFFFF',
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
@@ -53,7 +53,7 @@ const config: ExpoConfig = {
     'expo-secure-store',
     'expo-font',
     'expo-web-browser',
-    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 140, backgroundColor: '#FFFFFF' }],
+    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 240, backgroundColor: '#FFFFFF' }],
     [
       'expo-location',
       {
@@ -65,7 +65,7 @@ const config: ExpoConfig = {
       },
     ],
     ['expo-image-picker', { photosPermission: 'Attach photos of prescriptions, reports or your ID documents.', cameraPermission: 'Take photos of prescriptions or documents during a visit.' }],
-    ['expo-notifications', { color: '#C8352E', defaultChannel: 'default' }],
+    ['expo-notifications', { color: '#0E5A8A', defaultChannel: 'default' }],
     ['@react-native-community/datetimepicker', {}],
   ],
   experiments: { typedRoutes: false },

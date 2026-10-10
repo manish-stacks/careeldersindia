@@ -32,7 +32,7 @@ export function Field({ label, hint, error, children, className, htmlFor }: { la
 export function Checkbox({ label, checked, onChange, description }: { label: string; checked: boolean; onChange: (v: boolean) => void; description?: string }) {
   return (
     <label className="flex cursor-pointer items-start gap-3 py-1">
-      <input type="checkbox" className="mt-1 h-4 w-4 accent-[#C8352E]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <input type="checkbox" className="mt-1 h-4 w-4 accent-[#0E5A8A]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>
         <span className="text-[15px] text-ink">{label}</span>
         {description && <span className="block text-sm text-ink-muted">{description}</span>}
