@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
 
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5201').replace(/\/$/, '');
 
 export type ApiEnvelope<T> = { success: boolean; message: string; data: T; meta?: PageMeta & { unread?: number } };
 export type PageMeta = { page: number; limit: number; total: number; totalPages: number };

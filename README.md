@@ -26,12 +26,12 @@ npm run dev                   # API + Socket.IO on :5000 (workers run in-process
 
 # 3. Admin
 cd ../admin
-cp .env.example .env.local    # NEXT_PUBLIC_API_URL=http://localhost:5000
+cp .env.example .env.local    # NEXT_PUBLIC_API_URL=http://localhost:5201
 npm install
 npm run dev                   # http://localhost:3000
 ```
 
-API docs: http://localhost:5000/api-docs (OpenAPI JSON at `/api-docs.json`) · health: `/health`
+API docs: http://localhost:5201/api-docs (OpenAPI JSON at `/api-docs.json`) · health: `/health`
 
 ## Demo logins (after `npm run seed:reset`)
 
