@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import type { Job } from '@/lib/types';
 import { useAction } from '@/lib/hooks';
 import { Button, Card, Empty, ErrorView, Loading, Segmented, T } from '@/components/ui';
 import { JobBadge } from '@/components/status';
+import { FilterBar, LIST_PERF, PAST_DATES, UPCOMING_DATES, dateRange, useDebounced, type DateKey } from '@/components/filters';
 
 type Scope = 'new' | 'upcoming' | 'history';
 
@@ -20,9 +21,15 @@ export default function Jobs() {
     if (params.scope) setScope(params.scope);
   }, [params.scope]);
   const newCount = useQuery({ queryKey: ['jobs', 'new-count'], queryFn: () => api.page<Job>('/assistant/jobs?scope=new&limit=1') });
+  const [search, setSearch] = useState('');
+  const [date, setDate] = useState<DateKey>('any');
+  const term = useDebounced(search.trim());
+  const filtered = !!term || date !== 'any';
+  useEffect(() => setDate('any'), [scope]);
   const q = useInfiniteQuery({
-    queryKey: ['jobs', scope],
-    queryFn: ({ pageParam }) => api.page<Job>(`/assistant/jobs${qs({ scope, page: pageParam, limit: 20 })}`),
+    queryKey: ['jobs', scope, term, date],
+    placeholderData: (prev) => prev,
+    queryFn: ({ pageParam }) => api.page<Job>(`/assistant/jobs${qs({ scope, q: term || undefined, ...dateRange(date), page: pageParam, limit: 20 })}`),
     initialPageParam: 1,
     getNextPageParam: (l) => (l.meta.page < l.meta.totalPages ? l.meta.page + 1 : undefined),
   });
@@ -41,6 +48,9 @@ export default function Jobs() {
     <View style={{ flex: 1, backgroundColor: C.canvas }}>
       <View style={{ padding: S.lg, paddingBottom: S.sm }}>
         <Segmented value={scope} onChange={setScope} items={[{ value: 'new', label: 'New', count: newCount.data?.meta.total }, { value: 'upcoming', label: 'Upcoming' }, { value: 'history', label: 'Past' }]} />
+        <View style={{ marginTop: S.sm }}>
+          <FilterBar search={search} onSearch={setSearch} placeholder="Search patient name or visit number" dates={scope === 'history' ? PAST_DATES : UPCOMING_DATES} date={date} onDate={setDate} />
+        </View>
       </View>
       {q.isLoading ? (
         <Loading />
@@ -52,8 +62,10 @@ export default function Jobs() {
           keyExtractor={(j) => j._id}
           contentContainerStyle={{ padding: S.lg, paddingTop: S.sm, gap: S.sm }}
           refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { q.refetch(); newCount.refetch(); }} tintColor={C.brand} />}
-          onEndReached={() => q.hasNextPage && q.fetchNextPage()}
-          ListEmptyComponent={<Empty icon="briefcase-outline" title={scope === 'new' ? 'No new visits to accept' : scope === 'upcoming' ? 'No upcoming visits' : 'No past visits yet'} />}
+          {...LIST_PERF}
+          onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}
+          ListFooterComponent={q.isFetchingNextPage ? <ActivityIndicator color={C.brand} style={{ padding: S.lg }} /> : null}
+          ListEmptyComponent={<Empty icon="briefcase-outline" title={filtered ? 'No visits match your filters' : scope === 'new' ? 'No new visits to accept' : scope === 'upcoming' ? 'No upcoming visits' : 'No past visits yet'} />}
           ListHeaderComponent={scope === 'new' && pending.length > 1 ? (
             <Pressable onPress={() => setSel(sel.length === pending.length ? [] : pending)} style={{ flexDirection: 'row', alignItems: 'center', gap: S.sm, paddingVertical: S.xs }}>
               <Ionicons name={sel.length === pending.length ? 'checkbox' : 'square-outline'} size={22} color={C.brand} />

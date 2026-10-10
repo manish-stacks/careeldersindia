@@ -1,4 +1,4 @@
-import { FlatList, Pressable, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { api, qs } from '@/lib/api';
@@ -9,6 +9,7 @@ import { notificationTarget, openExternal } from '@/lib/links';
 import { C, S } from '@/lib/theme';
 import type { Notice as N } from '@/lib/types';
 import { Button, Empty, ErrorView, Loading, T } from '@/components/ui';
+import { LIST_PERF } from '@/components/filters';
 
 export default function Notifications() {
   const { user } = useAuth();
@@ -40,7 +41,9 @@ export default function Notifications() {
       data={items}
       keyExtractor={(n) => n._id}
       refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={C.brand} />}
-      onEndReached={() => q.hasNextPage && q.fetchNextPage()}
+      {...LIST_PERF}
+      onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}
+      ListFooterComponent={q.isFetchingNextPage ? <ActivityIndicator color={C.brand} style={{ padding: S.lg }} /> : null}
       ListHeaderComponent={unread ? <View style={{ padding: S.lg, paddingBottom: 0 }}><Button title={`Mark all ${unread} as read`} variant="secondary" size="md" onPress={() => readAll.mutate()} /></View> : null}
       ListEmptyComponent={<Empty icon="notifications-outline" title="You're all caught up" />}
       renderItem={({ item: n }) => (

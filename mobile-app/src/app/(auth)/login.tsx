@@ -37,7 +37,7 @@ export default function Login() {
       <StatusBar style="light" />
       <View style={[styles.hero, { paddingTop: insets.top + S.xl }]}>
         <View style={styles.mark}>
-          <Image source={require('../../../assets/logo.png')} style={{ width: 230, height: 160 }} resizeMode="contain" accessibilityLabel="Care Elders India" />
+          <Image source={require('../../../assets/logo.png')} style={{ width: 130, height: 80 }} resizeMode="contain" accessibilityLabel="Care Elders India" />
         </View>
         <T color="#DCEBF5" style={{ marginTop: 4, fontSize: 17 }}>
           Trusted daily home care for your family, monitored from anywhere.

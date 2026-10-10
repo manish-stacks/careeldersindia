@@ -88,7 +88,7 @@ const parent = {
 
 const booking = {
   create: z.object({ parentId: objectId, serviceId: objectId, itemKeys: z.array(z.string().max(60)).max(150).optional(), date, time, customerNotes: z.string().trim().max(1000).optional() }),
-  list: pageQuery.extend({ scope: z.enum(['upcoming', 'past', 'all']).optional(), status: z.string().optional(), parentId: objectId.optional() }),
+  list: pageQuery.extend({ scope: z.enum(['upcoming', 'past', 'all']).optional(), status: z.string().optional(), parentId: objectId.optional(), q: z.string().trim().max(60).optional(), from: date.optional(), to: date.optional() }),
   cancel: z.object({ reason: z.string().trim().min(3).max(500) }),
   reschedule: z.object({ date, time, reason: z.string().trim().min(3).max(500) }),
 };
@@ -131,7 +131,7 @@ const assistant = {
   availability: z.object({ isAvailable: z.boolean().optional(), workingHours: workingHours.optional() }),
   acceptMany: z.object({ ids: z.array(objectId).min(1).max(50) }),
   document: z.object({ type: z.enum(['GOV_ID', 'PAN', 'QUALIFICATION', 'PROFILE_PHOTO', 'OTHER']), documentNumber: z.string().trim().min(4).max(40) }),
-  jobs: pageQuery.extend({ scope: z.enum(['today', 'upcoming', 'history', 'new']).default('upcoming') }),
+  jobs: pageQuery.extend({ scope: z.enum(['today', 'upcoming', 'history', 'new']).default('upcoming'), status: z.string().optional(), q: z.string().trim().max(60).optional(), from: date.optional(), to: date.optional() }),
   reject: z.object({ reason: z.string().trim().min(3).max(500) }),
   reached: z.object({ latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional() }),
   noShow: z.object({ reason: z.string().trim().min(3).max(500) }),

@@ -1,3 +1,4 @@
+const { applySearchAndDates } = require('../utils/listFilters');
 const { Assistant, AssistantDocument, User, Booking } = require('../models');
 const { ApiError } = require('../utils/ApiError');
 const { encrypt, last4 } = require('../utils/crypto');
@@ -86,6 +87,8 @@ async function listJobs(userId, query) {
   } else if (query.scope === 'new') {
     filter.status = S.ASSISTANT_ASSIGNED;
   }
+  if (query.status) filter.status = query.status;
+  applySearchAndDates(filter, query);
   const sort = query.scope === 'history' ? { scheduledAt: -1 } : { scheduledAt: 1 };
   const [items, total] = await Promise.all([Booking.find(filter).sort(sort).skip(skip).limit(limit), Booking.countDocuments(filter)]);
   return { items: items.map(serializers.forAssistant), meta: pageMeta({ page, limit }, total), now };

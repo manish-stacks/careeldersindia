@@ -1,3 +1,4 @@
+const { applySearchAndDates } = require('../utils/listFilters');
 const { Booking, Parent, FamilyMember } = require('../models');
 const { nextNumber } = require('../models/Counter');
 const { ApiError } = require('../utils/ApiError');
@@ -163,6 +164,7 @@ async function listForCustomer(user, query) {
     filter.$and = [{ $or: [{ status: { $in: TERMINAL_STATUSES } }, { endsAt: { $lt: new Date() } }] }];
   }
   if (query.status) filter.status = query.status;
+  applySearchAndDates(filter, query);
   const sort = query.scope === 'upcoming' ? { scheduledAt: 1 } : { scheduledAt: -1 };
   const [items, total] = await Promise.all([
     Booking.find(filter).sort(sort).skip(skip).limit(limit).populate('assistantId', 'name mobile'),

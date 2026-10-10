@@ -1,4 +1,4 @@
-import { FlatList, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { api, qs } from '@/lib/api';
@@ -6,6 +6,7 @@ import { dateLong } from '@/lib/format';
 import { C, S } from '@/lib/theme';
 import type { ReportRow } from '@/lib/types';
 import { Badge, Card, Empty, ErrorView, Loading, T } from '@/components/ui';
+import { LIST_PERF } from '@/components/filters';
 import { OverallBadge } from '@/components/status';
 
 export default function Reports() {
@@ -25,7 +26,9 @@ export default function Reports() {
       keyExtractor={(r) => r._id}
       contentContainerStyle={{ padding: S.lg, gap: S.sm }}
       refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={C.brand} />}
-      onEndReached={() => q.hasNextPage && q.fetchNextPage()}
+      {...LIST_PERF}
+      onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}
+      ListFooterComponent={q.isFetchingNextPage ? <ActivityIndicator color={C.brand} style={{ padding: S.lg }} /> : null}
       ListEmptyComponent={<Empty icon="document-text-outline" title="No reports yet" body="After every visit you'll find the recorded measurements and notes here, with a PDF you can share with a doctor." />}
       renderItem={({ item: r }) => (
         <Card onPress={() => router.push(`/report/${r._id}`)}>
