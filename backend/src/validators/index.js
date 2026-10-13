@@ -29,7 +29,7 @@ const auth = {
     languages: z.array(z.string().trim().max(40)).max(10).default([]),
     serviceAreas: serviceAreas.default([]),
   }),
-  login: z.object({ identifier: z.string().trim().min(3).max(120), password: z.string().min(1).max(72), portal: z.enum(['ADMIN', 'MOBILE']).default('MOBILE') }),
+  login: z.object({ identifier: z.string().trim().min(3).max(120), password: z.string().min(1).max(72), portal: z.enum(['ADMIN', 'MOBILE', 'WEB']).default('MOBILE') }),
   refresh: z.object({ refreshToken: z.string().min(20).optional() }),
   forgot: z.object({ identifier: z.string().trim().min(3).max(120) }),
   reset: z.object({ identifier: z.string().trim().min(3).max(120), otp: z.string().regex(/^\d{6}$/), newPassword: password }),

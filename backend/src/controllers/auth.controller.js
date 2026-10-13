@@ -32,21 +32,24 @@ async function withAccess(u) {
   return { ...base, ...(await adminAccess(u)) };
 }
 
-async function respondWithSession(res, { user, accessToken, refreshToken }, statusCode = 200) {
-  const isWeb = user.role === ROLES.ADMIN;
+// Website requests (portal ADMIN/WEB, or a refresh made with the cookie) get the httpOnly cookie; the mobile app gets the token in the body.
+const isWebReq = (req) => ['ADMIN', 'WEB'].includes(req?.body?.portal) || (!req?.body?.refreshToken && !!req?.cookies?.[COOKIE]);
+
+async function respondWithSession(res, { user, accessToken, refreshToken }, statusCode = 200, req = null) {
+  const isWeb = user.role === ROLES.ADMIN || isWebReq(req);
   if (isWeb) res.cookie(COOKIE, refreshToken, cookieOpts());
   return ok(res, { user: await withAccess(user), accessToken, ...(isWeb ? {} : { refreshToken }) }, 'Signed in', statusCode);
 }
 
 module.exports = {
-  registerCustomer: asyncHandler(async (req, res) => respondWithSession(res, await authService.registerCustomer(req.body, ctx(req)), 201)),
-  registerAssistant: asyncHandler(async (req, res) => respondWithSession(res, await authService.registerAssistant(req.body, ctx(req)), 201)),
-  login: asyncHandler(async (req, res) => respondWithSession(res, await authService.login(req.body, ctx(req)))),
+  registerCustomer: asyncHandler(async (req, res) => respondWithSession(res, await authService.registerCustomer(req.body, ctx(req)), 201, req)),
+  registerAssistant: asyncHandler(async (req, res) => respondWithSession(res, await authService.registerAssistant(req.body, ctx(req)), 201, req)),
+  login: asyncHandler(async (req, res) => respondWithSession(res, await authService.login(req.body, ctx(req)), 200, req)),
 
   refresh: asyncHandler(async (req, res) => {
     const raw = req.body?.refreshToken || req.cookies?.[COOKIE];
     try {
-      return respondWithSession(res, await tokenService.rotateRefreshToken(raw, { userAgent: req.headers['user-agent'], ip: req.ip }));
+      return respondWithSession(res, await tokenService.rotateRefreshToken(raw, { userAgent: req.headers['user-agent'], ip: req.ip }), 200, req);
     } catch (err) {
       res.clearCookie(COOKIE, clearOpts());
       throw err;
@@ -73,7 +76,7 @@ module.exports = {
     const tokens = await authService.changePassword(req.user.id, req.body);
     await audit({ actor: req.user, action: 'PASSWORD_CHANGED', entityType: 'User', entityId: req.user.id, req });
     const user = await User.findById(req.user.id);
-    return respondWithSession(res, { user, ...tokens });
+    return respondWithSession(res, { user, ...tokens }, 200, req);
   }),
 
   me: asyncHandler(async (req, res) => {

@@ -46,6 +46,8 @@ router.use('/auth', authR);
 
 // ---------------------------------------------------------------- public
 router.get('/contact', settings.getContact); // public contact details (edited in admin → Settings)
+router.get('/legal/:slug', settings.getLegalPage); // privacy / terms (edited in admin → Settings)
+router.post('/enquiry', otpLimiter, validate({ body: settings.enquirySchema }), settings.enquiry); // website contact form
 router.get('/services', customer.listServices);
 router.get('/services/:id', id, customer.getService);
 router.get('/media/file', common.mediaFile); // HMAC-signed, no bearer
@@ -230,6 +232,8 @@ adm.post('/staff', validate({ body: staff.schemas.staff }), staff.createStaff);
 adm.patch('/staff/:id', withBody(staff.schemas.staffPatch), staff.updateStaff);
 adm.get('/settings/contact', settings.getContact);
 adm.put('/settings/contact', validate({ body: settings.contactSchema }), settings.updateContact);
+adm.get('/settings/legal', settings.getLegal);
+adm.put('/settings/legal', validate({ body: settings.legalSchema }), settings.updateLegal);
 router.use('/admin', adm);
 
 module.exports = { router, webhookHandler: payment.webhook, wellKnown: trip };

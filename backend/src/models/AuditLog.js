@@ -14,6 +14,9 @@ const auditLogSchema = new mongoose.Schema(
   { timestamps: { createdAt: true, updatedAt: false }, versionKey: false }
 );
 
+// Old entries are deleted automatically (MongoDB TTL). Set AUDIT_LOG_RETENTION_DAYS in .env to change; default 90 days.
+const RETENTION_DAYS = Math.max(1, Number(process.env.AUDIT_LOG_RETENTION_DAYS) || 90);
+auditLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: RETENTION_DAYS * 86400 });
 auditLogSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
 auditLogSchema.index({ actorId: 1, createdAt: -1 });
 auditLogSchema.index({ action: 1, createdAt: -1 });
