@@ -38,8 +38,3 @@ API docs: http://localhost:5201/api-docs (OpenAPI JSON at `/api-docs.json`) · h
 | Role | Login | Password | Notes |
 |---|---|---|---|
 | Admin | admin@parentcare.in | Admin@12345 | admin console |
-| Customer | rohan@example.com | Customer@123 | owns Sushila + Ramesh |
-| Customer | priya@example.com | Customer@123 | owns Kamala (weekly plan), view access to Sushila |
-| Assistant | neha@parentcare.in | Assistant@123 | APPROVED · Gurugram · has a live ON_THE_WAY visit |
-| Assistant | arjun@parentcare.in | Assistant@123 | APPROVED · Kochi |
-| Assistant | vikram@parentcare.in | Assistant@123 | PENDING · no government ID yet (approval blocked) |
