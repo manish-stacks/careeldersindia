@@ -1,137 +1,153 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
-import { ArrowRight, CalendarCheck, Clock, HeartPulse, MessageSquareText, ShieldCheck, ClipboardList, Home, Heart, Users, UserCheck, Star, Quote, ShieldPlus } from 'lucide-react';
-import { SectionTitle, CtaBand } from '@/components/site/bits';
+import { Check, BadgeCheck, FileText, MapPin, BellRing } from 'lucide-react';
+import { SectionTitle, CtaBand, Faq } from '@/components/site/bits';
 import { CATEGORIES } from '@/components/site/content';
 import { IMG } from '@/components/site/images';
 
-const FEATURES = [
-  { icon: HeartPulse, label: 'Compassionate Caregivers' },
-  { icon: Clock, label: '24/7 Support' },
-  { icon: ShieldCheck, label: 'Safe & Trusted Services' },
-];
 const STEPS = [
-  { icon: MessageSquareText, title: 'Get in Touch', body: 'Tell us your requirements and preferences.' },
-  { icon: ClipboardList, title: 'Personalized Plan', body: 'We create a care plan that fits your needs.' },
-  { icon: Home, title: 'Care Begins', body: 'Our trained caregivers start the service.' },
-  { icon: Heart, title: 'Ongoing Support', body: 'We stay connected for continuous care and updates.' },
+  ['Write to us', 'Tell us where your parents live and what worries you. A person on our care desk reads it.'],
+  ['Agree a plan', 'We suggest the right visit and fix a time that suits your parents.'],
+  ['We visit', 'You get the assistant\'s name beforehand and can follow them on the map.'],
+  ['You get a report', 'Measurements, notes and photos reach your account. If it is urgent, we call.'],
 ];
-const STATS = [
-  { icon: Users, value: '500+', label: 'Happy Families' },
-  { icon: UserCheck, value: '200+', label: 'Trained Caregivers' },
-  { icon: ShieldPlus, value: '98%', label: 'Client Satisfaction' },
-  { icon: Clock, value: '24/7', label: 'Round-the-clock Support' },
+const REASONS = [
+  'Every assistant is identity-checked and trained before the first visit.',
+  'You can see who visited, when, and what was recorded.',
+  'Reports list measurements and observations. We never give a diagnosis.',
+  'An urgent concern reaches our care desk and your family straight away.',
 ];
-const REVIEWS = [
-  { name: 'Priya Sharma', role: 'Daughter of Mr. R.K. Sharma', text: 'The team at Care Elders India is truly compassionate and professional. My father feels safe and happy, and that means everything to us.' },
-  { name: 'Amit Verma', role: 'Son of Mrs. Sunita Verma', text: 'Excellent service and very caring staff. They took great care of my mother during her recovery. Highly recommended!' },
-  { name: 'Neha Gupta', role: 'Daughter of Mrs. S. Gupta', text: 'The caregivers are kind, patient and well-trained. We are grateful for the peace of mind they provide.' },
+
+const TRUST = [
+  [BadgeCheck, 'Verified assistants', 'Identity and qualifications checked'],
+  [FileText, 'Report after every visit', 'In your account and as a PDF'],
+  [MapPin, 'Follow them on the way', 'Know when they will arrive'],
+  [BellRing, 'Urgent alerts', 'Our care desk and you, at once'],
+] as const;
+const WHO = [
+  ['Families living abroad', 'You are in another country and cannot just drop in. We visit, and you read what we found the same evening.'],
+  ['Families in the same city', 'You are busy, or your parents live across town. A regular visit gives you peace of mind between your own.'],
+  ['Elders recovering at home', 'After surgery or a hospital stay, a nurse or assistant helps with care, medicines and daily routine.'],
+];
+const SAMPLE = [['Blood pressure', '128 / 82 mmHg'], ['Pulse', '76 per minute'], ['Temperature', '98.4 F'], ['Oxygen level', '97 %'], ['Medicines', 'Taken as prescribed']];
+const FAQ: [string, string][] = [
+  ['Can I book a single visit first?', 'Yes. Book one visit, read the report, and decide about regular visits afterwards.'],
+  ['Do I need to be at home?', 'No. Your parents or a family member nearby can let the assistant in. You can follow the visit from your account.'],
+  ['Is the report a medical diagnosis?', 'No. It records measurements and observations. Please see a doctor for medical advice.'],
+  ['What if the assistant finds something worrying?', 'They mark the visit as urgent. Our care desk and you are alerted immediately.'],
 ];
 
 export default function HomePage() {
   return (
     <>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-[#F3FAF9] to-[#DDF0ED]">
-        <div className="relative z-10 mx-auto max-w-6xl px-4 pb-10 pt-14 sm:px-6 lg:py-24">
-          <div className="max-w-xl">
-            <span className="inline-block rounded-md bg-[#DDF0ED] px-3 py-1 text-sm font-semibold text-[#1B7F72]">Trusted Elder Care Services In India</span>
-            <h1 className="display mt-5 text-4xl font-bold leading-[1.15] text-[#0B3A53] sm:text-5xl">Because Every Elder Deserves <span className="text-[#1E8F7E]">Dignity, Care</span> and a <span className="text-[#1E8F7E]">Happier Tomorrow</span></h1>
-            <p className="mt-5 text-lg leading-relaxed text-ink-soft">Care Elders India provides professional and compassionate elder care services, helping your loved ones live safely, comfortably and with dignity, at home or in our care homes.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/our-services" className="inline-flex items-center gap-2 rounded-full bg-[#0B4F6C] px-7 py-3.5 text-lg font-semibold text-white shadow-lg hover:bg-[#093E55]">Explore Our Services <ArrowRight className="h-5 w-5" aria-hidden /></Link>
-              <Link href="/contact" className="inline-flex items-center gap-2 rounded-full border-2 border-[#1E8F7E]/50 bg-white px-7 py-3.5 text-lg font-semibold text-[#0B3A53] hover:bg-[#F3FAF9]"><CalendarCheck className="h-5 w-5 text-[#1E8F7E]" aria-hidden />Book a Consultation</Link>
-            </div>
-            <ul className="mt-9 grid gap-4 sm:grid-cols-3">
-              {FEATURES.map((f) => <li key={f.label} className="flex items-center gap-3 text-[15px] font-semibold leading-tight text-[#0B3A53]"><f.icon className="h-8 w-8 shrink-0 text-[#1E8F7E]" aria-hidden />{f.label}</li>)}
-            </ul>
+      <section className="relative bg-navy-dark">
+        <img src={IMG.hero} alt="A caregiver with a smiling elderly couple" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-dark/95 via-navy-dark/75 to-navy-dark/10" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-16 sm:px-6 lg:pb-40 lg:pt-24">
+          <p className="mb-4 inline-block rounded bg-white/15 px-3 py-1 text-sm font-semibold text-white">Elder care across India</p>
+          <h1 className="display max-w-2xl text-4xl leading-tight text-white sm:text-5xl">Care for your parents in India, even when you cannot be there.</h1>
+          <p className="mt-5 max-w-xl text-xl text-white/90">We send a trained assistant to their home, and send you a written report after every visit.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/customer/login?next=/customer/book" className="inline-flex items-center rounded-md bg-saffron px-7 py-3.5 text-lg font-semibold text-white hover:bg-saffron-dark">Book a visit</Link>
+            <Link href="/contact" className="inline-flex items-center rounded-md border-2 border-white px-7 py-3 text-lg font-semibold text-white hover:bg-white/10">Write to our care desk</Link>
           </div>
-        </div>
-        <div className="relative h-72 sm:h-96 lg:absolute lg:inset-y-0 lg:right-0 lg:h-auto lg:w-[56%]">
-          <img src={IMG.hero} alt="A caregiver with a smiling elderly couple" className="h-full w-full object-cover lg:[mask-image:linear-gradient(to_right,transparent,black_28%)]" />
         </div>
       </section>
 
-      {/* Services */}
+      <section className="relative z-10 mx-auto -mt-16 max-w-6xl px-4 sm:px-6">
+        <ul className="grid gap-px overflow-hidden rounded-md border border-rule bg-rule shadow-pop sm:grid-cols-2 lg:grid-cols-4">
+          {TRUST.map(([I, t, b]) => (
+            <li key={t} className="flex items-start gap-3 bg-white p-5">
+              <I className="mt-0.5 h-7 w-7 shrink-0 text-leaf" aria-hidden />
+              <div><p className="font-bold text-navy">{t}</p><p className="text-sm text-ink-muted">{b}</p></div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6" id="services">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <SectionTitle tag="Our Services" title="Comprehensive Elder Care Services">We offer a range of customized care solutions to meet the unique needs of every senior, because every stage of life matters.</SectionTitle>
-          <Link href="/our-services" className="inline-flex items-center gap-2 text-lg font-semibold text-[#0B4F6C] hover:underline">View All Services <ArrowRight className="h-5 w-5" aria-hidden /></Link>
-        </div>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        <SectionTitle tag="Our services" title="How we can help your family" />
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {CATEGORIES.map((c) => (
-            <article key={c.title} className="flex flex-col overflow-hidden rounded-2xl border border-[#E3EFEE] bg-white shadow-sm transition-shadow hover:shadow-lg">
-              <img src={c.img} alt="" className="h-32 w-full object-cover" />
-              <div className="flex flex-1 flex-col px-5 pb-5">
-                <span className="-mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#1E8F7E] text-white ring-4 ring-white"><c.icon className="h-6 w-6" aria-hidden /></span>
-                <h3 className="mt-3 text-lg font-bold leading-snug text-[#0B3A53]">{c.title}</h3>
-                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-ink-muted">{c.body}</p>
-                <Link href="/our-services" className="mt-4 inline-flex items-center gap-1.5 font-semibold text-[#0B4F6C] hover:underline">Learn More <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+            <article key={c.title} className="overflow-hidden rounded-md border border-rule bg-white">
+              <img src={c.img} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover" />
+              <div className="p-5">
+                <h3 className="display text-xl text-navy">{c.title}</h3>
+                <p className="mt-2 text-ink-muted">{c.body}</p>
               </div>
             </article>
           ))}
+          <Link href="/contact" className="flex flex-col justify-center rounded-md bg-navy p-6 text-white hover:bg-navy-dark">
+            <h3 className="display text-xl text-white">Not sure what your parents need?</h3>
+            <p className="mt-2 text-white/85">Tell us about them and we will suggest a start.</p>
+            <span className="mt-4 font-semibold text-saffron">Talk to us</span>
+          </Link>
         </div>
+        <p className="mt-8"><Link href="/our-services" className="font-semibold text-navy underline underline-offset-4">See the visits you can book</Link></p>
       </section>
 
-      {/* How it works */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-white via-white to-[#E6F4F1]">
-        <div className="relative z-10 mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <div className="lg:max-w-[54%]">
-            <SectionTitle tag="How It Works" title="Simple Steps to Better Care">Getting started is easy. Just follow these simple steps and let us take care of the rest.</SectionTitle>
-            <ol className="mt-8 grid gap-6 sm:grid-cols-2">
-              {STEPS.map((s, i) => (
-                <li key={s.title}>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#CFE9E4] bg-white text-[#1E8F7E]"><s.icon className="h-6 w-6" aria-hidden /></span>
-                  </div>
-                  <h3 className="mt-3 text-lg font-bold text-[#0B3A53]">{s.title}</h3>
-                  <p className="mt-1 text-[15px] leading-relaxed text-ink-muted">{s.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-        <img src={IMG.aboutPhoto} alt="A granddaughter hugging her grandmother" className="pointer-events-none mx-auto h-64 w-full object-contain mix-blend-multiply sm:h-80 lg:absolute lg:inset-y-0 lg:right-0 lg:mx-0 lg:h-full lg:w-[48%] lg:object-right" />
-      </section>
-
-      {/* Why us */}
-      <section id="why-us" className="scroll-mt-24 bg-gradient-to-r from-[#DDF0ED] to-[#EAF6F4]">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_1.3fr]">
+      <section className="bg-sand">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2">
+          <img src={IMG.aboutPhoto} alt="A granddaughter hugging her grandmother" loading="lazy" className="aspect-[7/5] w-full rounded-md object-cover" />
           <div>
-            <SectionTitle tag="Why Choose Us" title="Your Trust, Our Priority">At Care Elders India, we are committed to delivering high-quality, compassionate and reliable elder care services that families can trust.</SectionTitle>
-            <Link href="/about" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#0B4F6C] px-7 py-3.5 text-lg font-semibold text-white hover:bg-[#093E55]">Learn More About Us <ArrowRight className="h-5 w-5" aria-hidden /></Link>
+            <SectionTitle tag="Why families choose us" title="You should always know how they are" />
+            <ul className="mt-6 space-y-3">
+              {REASONS.map((r) => <li key={r} className="flex items-start gap-3"><Check className="mt-1 h-5 w-5 shrink-0 text-leaf" aria-hidden />{r}</li>)}
+            </ul>
+            <Link href="/about" className="mt-6 inline-block font-semibold text-navy underline underline-offset-4">More about us</Link>
           </div>
-          <ul className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {STATS.map((s) => (
-              <li key={s.label} className="text-center">
-                <s.icon className="mx-auto h-10 w-10 text-[#1E8F7E]" aria-hidden />
-                <p className="display mt-2 text-3xl font-bold text-[#0B3A53]">{s.value}</p>
-                <p className="mt-1 text-[15px] font-medium text-ink-soft">{s.label}</p>
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-6">
-        <SectionTitle tag="Testimonials" title="What Families Say About Us">Real stories from real families who trust Care Elders India.</SectionTitle>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {REVIEWS.map((r, i) => (
-            <figure key={r.name} className="flex flex-col rounded-2xl border border-[#E3EFEE] bg-white p-6 shadow-sm">
-              <Quote className="h-8 w-8 text-[#9ED6CC]" aria-hidden />
-              <blockquote className="mt-2 flex-1 leading-relaxed text-ink-soft">{r.text}</blockquote>
-              <figcaption className="mt-5 flex items-center gap-3">
-                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white ${['bg-[#1E8F7E]', 'bg-[#0B4F6C]', 'bg-[#C0576B]'][i]}`} aria-hidden>{r.name[0]}</span>
-                <div>
-                  <p className="font-bold text-[#0B3A53]">{r.name}</p>
-                  <p className="text-sm text-ink-muted">{r.role}</p>
-                  <p className="mt-0.5 flex text-[#F4B63F]" aria-label="5 out of 5 stars">{[0, 1, 2, 3, 4].map((n) => <Star key={n} className="h-4 w-4 fill-current" aria-hidden />)}</p>
-                </div>
-              </figcaption>
-            </figure>
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <SectionTitle tag="Who we help" title="Made for families like yours" />
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {WHO.map(([t, b]) => (
+            <div key={t} className="border-t-4 border-leaf bg-sand p-6">
+              <h3 className="display text-xl text-navy">{t}</h3>
+              <p className="mt-2 text-ink-soft">{b}</p>
+            </div>
           ))}
         </div>
+      </section>
+
+      <section className="bg-navy">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2">
+          <div className="text-white">
+            <p className="text-base font-semibold text-saffron">Your report</p>
+            <h2 className="display mt-1 text-3xl text-white sm:text-4xl">See exactly what we saw</h2>
+            <p className="mt-4 text-lg text-white/85">After each visit you receive a clear report with the readings, the assistant&apos;s notes and photos when needed. Share it with your parents&apos; doctor if you wish.</p>
+            <Link href="/our-services" className="mt-6 inline-flex rounded-md bg-saffron px-6 py-3 font-semibold text-white hover:bg-saffron-dark">See what is checked</Link>
+          </div>
+          <div className="rounded-md bg-white p-6 shadow-pop">
+            <div className="flex items-center justify-between border-b border-rule pb-3">
+              <p className="font-bold text-navy">Visit report</p>
+              <span className="rounded bg-leaf-soft px-2.5 py-0.5 text-sm font-semibold text-leaf">Completed</span>
+            </div>
+            <dl className="divide-y divide-rule">
+              {SAMPLE.map(([k, v]) => <div key={k} className="flex justify-between py-2.5"><dt className="text-ink-muted">{k}</dt><dd className="font-semibold text-ink">{v}</dd></div>)}
+            </dl>
+            <p className="mt-3 text-xs text-ink-faint">Sample report. The details are made up for illustration.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <SectionTitle tag="How it works" title="Four steps from first message to first report" />
+        <ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map(([t, b], i) => (
+            <li key={t}>
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy font-bold text-white">{i + 1}</span>
+              <h3 className="mt-3 text-lg font-bold text-navy">{t}</h3>
+              <p className="mt-1 text-ink-muted">{b}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+        <SectionTitle tag="Questions" title="Before you book" />
+        <div className="mt-8"><Faq items={FAQ} /></div>
       </section>
 
       <CtaBand />

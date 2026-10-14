@@ -9,6 +9,7 @@ export const ROUTE_PERMISSIONS: [string, Perm][] = [
   ['/emergency-alerts', 'alerts.view'],
   ['/customers', 'customers.view'],
   ['/parents', 'customers.view'],
+  ['/enquiries', 'customers.view'],
   ['/assistants', 'assistants.view'],
   ['/reports', 'reports.view'],
   ['/recurring-plans', 'plans.view'],

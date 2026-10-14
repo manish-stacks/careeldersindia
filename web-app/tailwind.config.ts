@@ -8,6 +8,12 @@ const config: Config = {
       colors: {
         brand: { DEFAULT: '#0E5A8A', dark: '#0A4468', soft: '#E8F1F8', line: '#BCD6E8' },
         canvas: '#F7F8FA',
+        paper: '#FFFFFF',
+        sand: '#F1F6F9',
+        rule: '#DCE5EB',
+        navy: { DEFAULT: '#0B4F7C', dark: '#083A5C' },
+        leaf: { DEFAULT: '#2E8B57', soft: '#E4F0E8' },
+        saffron: { DEFAULT: '#F08A24', dark: '#D6740F' },
         ink: { DEFAULT: '#1F2328', soft: '#3A4048', muted: '#5B6470', faint: '#8A929C' },
         line: { DEFAULT: '#E3E6EA', strong: '#CDD2D8' },
         ok: { DEFAULT: '#1E7A4F', soft: '#E6F3EC' },

@@ -1,28 +1,21 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { FileCheck2, GraduationCap, Eye, HeartHandshake, ShieldCheck, Users, Clock, BadgeCheck, ClipboardCheck, ArrowRight } from 'lucide-react';
 import { IMG } from '@/components/site/images';
 import { PageHero, CtaBand, SectionTitle, Faq } from '@/components/site/bits';
 
 export const metadata: Metadata = { title: 'About us', description: 'Care Elders India helps families abroad look after their parents at home in India.' };
 
-const NUMBERS = [
-  { icon: Users, value: '500+', label: 'Happy Families' },
-  { icon: BadgeCheck, value: '200+', label: 'Trained Caregivers' },
-  { icon: ShieldCheck, value: '98%', label: 'Client Satisfaction' },
-  { icon: Clock, value: '24/7', label: 'Care Desk Support' },
-];
 const VALUES = [
-  { icon: HeartHandshake, title: 'Dignity first', body: 'Every elder is treated with respect, patience and kindness.' },
-  { icon: Eye, title: 'Full transparency', body: 'Families see who visits, when, and what was recorded.' },
-  { icon: ShieldCheck, title: 'Safety always', body: 'Urgent concerns reach the care desk and the family immediately.' },
-  { icon: ClipboardCheck, title: 'Honest reports', body: 'We record measurements and observations. We never diagnose.' },
+  ['Dignity first', 'Every elder is treated with respect, patience and kindness.'],
+  ['Full transparency', 'Families see who visits, when, and what was recorded.'],
+  ['Safety always', 'Urgent concerns reach the care desk and the family immediately.'],
+  ['Honest reports', 'We record measurements and observations. We never diagnose.'],
 ];
 const VERIFY = [
-  { icon: FileCheck2, title: 'Documents checked', body: 'Identity and qualification documents are reviewed by our care desk.' },
-  { icon: GraduationCap, title: 'Trained for home visits', body: 'Assistants follow a fixed checklist for vitals, medicines and wellbeing.' },
-  { icon: Eye, title: 'Supervised', body: 'Every booking, assignment and report is visible to our care desk and recorded.' },
+  ['Documents checked', 'Identity and qualification documents are reviewed by our care desk.'],
+  ['Trained for home visits', 'Assistants follow a fixed checklist for vitals, medicines and wellbeing.'],
+  ['Supervised', 'Every booking, assignment and report is visible to our care desk and recorded.'],
 ];
 const FAQ: [string, string][] = [
   ['Who visits my parents?', 'A verified and trained care assistant, assigned and supervised by our care desk. You see the name before the visit.'],
@@ -36,66 +29,41 @@ export default function AboutPage() {
     <>
       <PageHero image={IMG.about} eyebrow="About us" title="Distance should not mean worry">Millions of families live far from their parents. We exist so that the people who raised you are seen, checked and cared for, and so that you always know.</PageHero>
 
-      {/* Numbers */}
-      <section className="mx-auto max-w-6xl px-4 pt-12 sm:px-6">
-        <ul className="grid grid-cols-2 gap-4 rounded-3xl border border-[#D6E8E6] bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-4">
-          {NUMBERS.map((n) => (
-            <li key={n.label} className="text-center">
-              <n.icon className="mx-auto h-9 w-9 text-[#1E8F7E]" aria-hidden />
-              <p className="display mt-2 text-3xl font-bold text-[#0B3A53]">{n.value}</p>
-              <p className="mt-1 text-[15px] font-medium text-ink-soft">{n.label}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Story */}
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2">
-        <img src={IMG.aboutPhoto} alt="A granddaughter hugging her grandmother" loading="lazy" className="h-72 w-full rounded-3xl object-cover shadow-xl ring-4 ring-white sm:h-96" />
+        <img src={IMG.aboutPhoto} alt="A granddaughter hugging her grandmother" loading="lazy" className="aspect-[4/3] w-full rounded-md object-cover" />
         <div>
           <SectionTitle tag="Our story" title="What we believe" />
-          <div className="mt-5 space-y-4 text-lg leading-relaxed text-ink-soft">
+          <div className="mt-5 space-y-4 text-lg text-ink-soft">
             <p>Good care starts with paying attention. A regular visit by someone trained to notice small changes can catch a problem early and give a family real reassurance.</p>
             <p>We built Care Elders India around that idea. Families book, trained assistants visit, and a care desk watches over every step. The result is a report you can trust and a team you can reach.</p>
           </div>
-          <Link href="/contact" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#0B4F6C] px-7 py-3.5 text-lg font-semibold text-white hover:bg-[#093E55]">Talk to our care desk <ArrowRight className="h-5 w-5" aria-hidden /></Link>
+          <Link href="/contact" className="btn-solid mt-6">Talk to our care desk</Link>
         </div>
       </section>
 
-      {/* Values */}
-      <section className="bg-gradient-to-r from-[#DDF0ED] to-[#EAF6F4]">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <SectionTitle tag="Our values" title="What guides every visit" />
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {VALUES.map((v) => (
-              <div key={v.title} className="rounded-2xl bg-white p-6 shadow-sm">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1E8F7E] text-white"><v.icon className="h-6 w-6" aria-hidden /></span>
-                <h3 className="mt-4 text-lg font-bold text-[#0B3A53]">{v.title}</h3>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-ink-muted">{v.body}</p>
-              </div>
+      <section className="bg-sand">
+        <div className="mx-auto grid max-w-5xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1fr_1.4fr]">
+          <SectionTitle tag="What we hold to" title="Four things we will not trade away" />
+          <ul className="space-y-6">
+            {VALUES.map(([t, b]) => (
+              <li key={t} className="border-l-4 border-leaf pl-5">
+                <h3 className="display text-xl text-navy">{t}</h3>
+                <p className="mt-1 text-ink-soft">{b}</p>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
-      {/* Assistants */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <SectionTitle tag="Our team" title="How we choose our assistants" />
-        <ol className="mt-8 grid gap-6 md:grid-cols-3">
-          {VERIFY.map((v, i) => (
-            <li key={v.title} className="relative rounded-3xl border border-[#D6E8E6] bg-white p-8">
-              <span className="display absolute right-6 top-4 text-5xl font-bold text-[#DDF0ED]" aria-hidden>{i + 1}</span>
-              <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#E4F2F0] text-brand"><v.icon className="h-6 w-6" aria-hidden /></span>
-              <h3 className="mt-5 text-xl font-bold text-[#0B3A53]">{v.title}</h3>
-              <p className="mt-2 leading-relaxed text-ink-soft">{v.body}</p>
-            </li>
-          ))}
-        </ol>
+      <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+        <SectionTitle tag="Our assistants" title="Who comes to your parents' door" />
+        <div className="mt-6 max-w-2xl space-y-4 text-lg text-ink-soft">
+          {VERIFY.map(([t, b]) => <p key={t}><strong className="font-semibold text-navy">{t}.</strong> {b}</p>)}
+        </div>
       </section>
 
-      {/* FAQ */}
-      <section className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
-        <SectionTitle tag="Questions" title="Things families ask us" />
+      <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+        <SectionTitle tag="Questions" title="What families usually ask" />
         <div className="mt-8"><Faq items={FAQ} /></div>
       </section>
 

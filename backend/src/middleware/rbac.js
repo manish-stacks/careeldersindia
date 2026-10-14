@@ -8,6 +8,7 @@ const MODULE_BY_SEGMENT = {
   customers: 'customers',
   parents: 'customers',
   users: 'customers',
+  enquiries: 'customers',
   assistants: 'assistants',
   'assistant-documents': 'assistants',
   services: 'services',

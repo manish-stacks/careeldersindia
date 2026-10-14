@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard, CalendarClock, MapPinned, Siren, Users, HeartHandshake, UserRoundCheck, FileHeart, Repeat, Stethoscope, DollarSign, Bell, ScrollText, ShieldCheck, LogOut, Settings, Menu, X, Wifi, WifiOff, ChevronDown, Lock,
+  LayoutDashboard, CalendarClock, MapPinned, Siren, Users, HeartHandshake, UserRoundCheck, FileHeart, Repeat, Stethoscope, DollarSign, Bell, Inbox, ScrollText, ShieldCheck, LogOut, Settings, Menu, X, Wifi, WifiOff, ChevronDown, Lock,
 } from 'lucide-react';
 import { useAuth, homeFor } from '@/lib/auth';
 import { useSocket } from '@/lib/socket';
@@ -62,6 +62,7 @@ export function Shell({ children }: { children: ReactNode }) {
       items: [
         { href: '/customers', label: 'Customers', icon: Users, perm: 'customers.view' },
         { href: '/parents', label: 'Parents', icon: HeartHandshake, perm: 'customers.view' },
+        { href: '/enquiries', label: 'Enquiries', icon: Inbox, perm: 'customers.view' },
         { href: '/assistants', label: 'Assistants', icon: UserRoundCheck, perm: 'assistants.view' },
       ],
     },

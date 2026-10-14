@@ -217,6 +217,8 @@ adm.get('/emergency-alerts', validate({ query: v.emergency.list }), admin.listAl
 adm.post('/emergency-alerts/:id/acknowledge', id, admin.acknowledgeAlert);
 adm.post('/emergency-alerts/:id/resolve', withBody(v.emergency.resolve), admin.resolveAlert);
 
+adm.get('/enquiries', validate({ query: settings.enquiryListSchema }), settings.listEnquiries);
+adm.patch('/enquiries/:id', withBody(settings.enquiryUpdateSchema), settings.updateEnquiry);
 adm.get('/audit-logs', validate({ query: v.admin.auditQuery }), admin.auditLogs);
 adm.post('/notifications/broadcast', validate({ body: v.admin.broadcast }), admin.broadcast);
 adm.get('/notifications/broadcasts', admin.recentBroadcasts);

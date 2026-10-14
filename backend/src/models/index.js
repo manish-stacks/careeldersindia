@@ -22,5 +22,6 @@ module.exports = {
   EmergencyAlert: require('./EmergencyAlert'),
   AuditLog: require('./AuditLog'),
   Setting: require('./Setting'),
+  Enquiry: require('./Enquiry'),
   ...require('./Counter'),
 };

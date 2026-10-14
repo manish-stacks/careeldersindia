@@ -2,6 +2,8 @@ const { z } = require('zod');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { ok } = require('../utils/response');
 const Setting = require('../models/Setting');
+const Enquiry = require('../models/Enquiry');
+const { parsePagination, pageMeta, escapeRegex } = require('../utils/pagination');
 const notifications = require('../services/notification.service');
 
 const DEFAULTS = {
@@ -82,6 +84,14 @@ const enquirySchema = z.object({
   message: z.string().trim().min(10).max(1500),
 });
 
+const enquiryListSchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  status: z.enum(['open', 'handled']).optional().or(z.literal('')),
+  q: z.string().max(100).optional(),
+});
+const enquiryUpdateSchema = z.object({ handled: z.boolean() });
+
 async function read() {
   const doc = await Setting.findOne({ key: 'contact' }).lean();
   return { ...DEFAULTS, ...(doc?.value || {}) };
@@ -103,9 +113,38 @@ module.exports = {
   }),
   contactSchema,
   enquirySchema,
+  enquiryListSchema,
+  enquiryUpdateSchema,
+  // Admin: list website enquiries (newest first)
+  listEnquiries: asyncHandler(async (req, res) => {
+    const pg = parsePagination(req.query);
+    const filter = {};
+    if (req.query.status === 'open') filter.handled = false;
+    if (req.query.status === 'handled') filter.handled = true;
+    if (req.query.q) {
+      const rx = new RegExp(escapeRegex(req.query.q), 'i');
+      filter.$or = [{ name: rx }, { email: rx }, { message: rx }];
+    }
+    const [items, total] = await Promise.all([
+      Enquiry.find(filter).sort({ createdAt: -1 }).skip(pg.skip).limit(pg.limit).lean(),
+      Enquiry.countDocuments(filter),
+    ]);
+    ok(res, items, 'OK', 200, pageMeta(pg, total));
+  }),
+  updateEnquiry: asyncHandler(async (req, res) => {
+    const handled = req.body.handled;
+    const doc = await Enquiry.findByIdAndUpdate(
+      req.params.id,
+      handled ? { handled: true, handledAt: new Date(), handledBy: req.user._id || req.user.id } : { handled: false, $unset: { handledAt: 1, handledBy: 1 } },
+      { new: true }
+    ).lean();
+    if (!doc) return res.status(404).json({ success: false, message: 'Enquiry not found' });
+    ok(res, doc, 'Enquiry updated');
+  }),
   // Public website contact form → notifies every admin
   enquiry: asyncHandler(async (req, res) => {
     const { name, email, phone, message } = req.body;
+    await Enquiry.create({ name, email, phone: phone || '', message, ip: req.ip });
     await notifications.notifyAdmins({ type: 'WEB_ENQUIRY', title: `Website enquiry from ${name}`, body: `${message}\n\nEmail: ${email}${phone ? `\nPhone: ${phone}` : ''}`.slice(0, 1800), data: { email, phone: phone || '' }, push: false });
     ok(res, {}, 'Thank you. Our care desk will contact you shortly.');
   }),

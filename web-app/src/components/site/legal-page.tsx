@@ -15,7 +15,7 @@ export function LegalPage({ slug, eyebrow }: { slug: 'privacy' | 'terms'; eyebro
       <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
         {q.isLoading ? <p className="text-ink-muted">Loading…</p> : q.error ? <p className="text-danger">This page could not be loaded. Please try again later.</p> : (
           <div className="space-y-5">
-            {blocks.map((b, i) => b.startsWith('#') ? <h2 key={i} className="display pt-4 text-2xl font-bold text-[#0B3A53]">{b.replace(/^#+\s*/, '')}</h2> : <p key={i} className="whitespace-pre-line text-lg leading-relaxed text-ink-soft">{b}</p>)}
+            {blocks.map((b, i) => b.startsWith('#') ? <h2 key={i} className="display pt-4 text-2xl text-navy">{b.replace(/^#+\s*/, '')}</h2> : <p key={i} className="whitespace-pre-line text-lg leading-relaxed text-ink-soft">{b}</p>)}
           </div>
         )}
       </div>
