@@ -1,18 +1,20 @@
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { api, qs } from '@/lib/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, qs, type PagedResponse } from '@/lib/api';
 import { dateLong } from '@/lib/format';
-import { C, S } from '@/lib/theme';
+import { C, S, TAB } from '@/lib/theme';
 import type { ReportRow } from '@/lib/types';
 import { Badge, Card, Empty, ErrorView, Loading, T } from '@/components/ui';
 import { LIST_PERF } from '@/components/filters';
 import { OverallBadge } from '@/components/status';
 
 export default function Reports() {
-  const q = useInfiniteQuery({
+  const insets = useSafeAreaInsets();
+  const q = useInfiniteQuery<PagedResponse<ReportRow>>({
     queryKey: ['reports'],
-    queryFn: ({ pageParam }) => api.page<ReportRow>(`/reports${qs({ page: pageParam, limit: 20 })}`),
+    queryFn: ({ pageParam }) => api.page<ReportRow>(`/reports${qs({ page: pageParam as number, limit: 20 })}`),
     initialPageParam: 1,
     getNextPageParam: (l) => (l.meta.page < l.meta.totalPages ? l.meta.page + 1 : undefined),
   });
@@ -21,10 +23,10 @@ export default function Reports() {
   const items = q.data?.pages.flatMap((p) => p.items) || [];
   return (
     <FlatList
-      style={{ backgroundColor: C.canvas }}
+      style={{ flex: 1, backgroundColor: C.canvas }}
       data={items}
       keyExtractor={(r) => r._id}
-      contentContainerStyle={{ padding: S.lg, gap: S.sm }}
+      contentContainerStyle={{ padding: S.lg, paddingBottom: TAB.height + insets.bottom + S.xl, gap: S.sm }}
       refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={C.brand} />}
       {...LIST_PERF}
       onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}

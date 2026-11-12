@@ -50,7 +50,7 @@ export default function RegisterAssistant() {
         <Choice columns={3} value={f.gender || undefined} onChange={(v) => set('gender')(v)} options={[{ value: 'FEMALE', label: 'Female' }, { value: 'MALE', label: 'Male' }, { value: 'OTHER', label: 'Other' }]} />
       </Field>
       <Field label="Date of birth" required><DateInput value={f.dob} onChange={set('dob')} maximumDate={new Date(new Date().getFullYear() - 18, 11, 31)} /></Field>
-      <Field label="Password" required hint="8+ characters with a letter and a number."><Input value={f.password} onChangeText={set('password')} secureTextEntry autoComplete="new-password" /></Field>
+      <Field label="Password" required hint="8+ characters with a letter and a number."><Input value={f.password} onChangeText={set('password')} secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete="new-password" placeholder="Enter password" /></Field>
 
       <T v="heading" style={{ marginTop: S.md, marginBottom: S.md }}>Your address</T>
       <Field label="House / street" required><Input value={f.line1} onChangeText={set('line1')} /></Field>

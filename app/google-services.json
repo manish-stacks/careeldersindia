@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "470998954417",
+    "project_id": "careeldersindia",
+    "storage_bucket": "careeldersindia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:470998954417:android:7414f93b5bf011a53f8d90",
+        "android_client_info": {
+          "package_name": "in.careeldersindia.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT2U2la9dq8VmDFdJWzbeCv8ldlnxyDfo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

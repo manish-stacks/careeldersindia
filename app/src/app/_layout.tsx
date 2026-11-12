@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { SocketProvider } from '@/lib/socket';
 import { ToastProvider } from '@/components/toast';
+import { PermissionDisclosureModal } from '@/components/permission-disclosure';
 import { registerPush } from '@/lib/push';
 import { notificationTarget, openExternal, rememberPending } from '@/lib/links';
 import { ApiError } from '@/lib/api';
@@ -65,25 +66,28 @@ function Gate() {
   if (!ready || !fontsLoaded) return null;
 
   return (
-    <Stack
-      screenOptions={{
-        headerTintColor: C.ink,
-        headerTitleStyle: { fontFamily: F.semibold, fontSize: 18 },
-        headerShadowVisible: false,
-        headerStyle: { backgroundColor: C.canvas },
-        contentStyle: { backgroundColor: C.canvas },
-        headerBackButtonDisplayMode: 'minimal',
-      }}
-    >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(customer)" options={{ headerShown: false }} />
-      <Stack.Screen name="(assistant)" options={{ headerShown: false }} />
-      <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
-      <Stack.Screen name="change-password" options={{ title: 'Change password' }} />
-      <Stack.Screen name="sos" options={{ title: 'Emergency help', presentation: 'modal' }} />
-      <Stack.Screen name="open" options={{ headerShown: false }} />
-    </Stack>
+    <>
+      <Stack
+        screenOptions={{
+          headerTintColor: C.ink,
+          headerTitleStyle: { fontFamily: F.semibold, fontSize: 18 },
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: C.canvas },
+          contentStyle: { backgroundColor: C.canvas },
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(customer)" options={{ headerShown: false }} />
+        <Stack.Screen name="(assistant)" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+        <Stack.Screen name="change-password" options={{ title: 'Change password' }} />
+        <Stack.Screen name="sos" options={{ title: 'Emergency help', presentation: 'modal' }} />
+        <Stack.Screen name="open" options={{ headerShown: false }} />
+      </Stack>
+      <PermissionDisclosureModal />
+    </>
   );
 }
 

@@ -214,7 +214,7 @@ export function Field({ label, hint, error, children, style, required }: { label
   );
 }
 
-export const Input = forwardRef<TextInput, TextInputProps & { invalid?: boolean }>(({ style, invalid, multiline, ...p }, ref) => {
+export const Input = forwardRef<TextInput, TextInputProps & { invalid?: boolean }>(({ style, invalid, multiline, secureTextEntry, ...p }, ref) => {
   const [focus, setFocus] = useState(false);
   return (
     <TextInput
@@ -222,6 +222,9 @@ export const Input = forwardRef<TextInput, TextInputProps & { invalid?: boolean 
       placeholderTextColor={C.faint}
       maxFontSizeMultiplier={1.5}
       multiline={multiline}
+      secureTextEntry={secureTextEntry}
+      autoCorrect={secureTextEntry ? false : p.autoCorrect}
+      autoCapitalize={secureTextEntry ? 'none' : p.autoCapitalize}
       onFocus={(e) => {
         setFocus(true);
         p.onFocus?.(e);
@@ -230,7 +233,14 @@ export const Input = forwardRef<TextInput, TextInputProps & { invalid?: boolean 
         setFocus(false);
         p.onBlur?.(e);
       }}
-      style={[styles.input, multiline && { minHeight: 96, textAlignVertical: 'top', paddingTop: 12 }, focus && { borderColor: C.brand }, invalid && { borderColor: C.danger }, style]}
+      style={[
+        styles.input,
+        secureTextEntry && { fontFamily: undefined },
+        multiline && { minHeight: 96, textAlignVertical: 'top', paddingTop: 12 },
+        focus && { borderColor: C.brand },
+        invalid && { borderColor: C.danger },
+        style,
+      ]}
       {...p}
     />
   );

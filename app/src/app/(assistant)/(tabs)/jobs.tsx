@@ -3,9 +3,10 @@ import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 're
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { api, qs } from '@/lib/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, qs, type PagedResponse } from '@/lib/api';
 import { dateLong, time } from '@/lib/format';
-import { C, S } from '@/lib/theme';
+import { C, S, TAB } from '@/lib/theme';
 import type { Job } from '@/lib/types';
 import { useAction } from '@/lib/hooks';
 import { Button, Card, Empty, ErrorView, Loading, Segmented, T } from '@/components/ui';
@@ -15,6 +16,7 @@ import { FilterBar, LIST_PERF, PAST_DATES, UPCOMING_DATES, dateRange, useDebounc
 type Scope = 'new' | 'upcoming' | 'history';
 
 export default function Jobs() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ scope?: Scope }>();
   const [scope, setScope] = useState<Scope>(params.scope || 'upcoming');
   useEffect(() => {
@@ -26,10 +28,10 @@ export default function Jobs() {
   const term = useDebounced(search.trim());
   const filtered = !!term || date !== 'any';
   useEffect(() => setDate('any'), [scope]);
-  const q = useInfiniteQuery({
+  const q = useInfiniteQuery<PagedResponse<Job>>({
     queryKey: ['jobs', scope, term, date],
     placeholderData: (prev) => prev,
-    queryFn: ({ pageParam }) => api.page<Job>(`/assistant/jobs${qs({ scope, q: term || undefined, ...dateRange(date), page: pageParam, limit: 20 })}`),
+    queryFn: ({ pageParam }) => api.page<Job>(`/assistant/jobs${qs({ scope, q: term || undefined, ...dateRange(date), page: pageParam as number, limit: 20 })}`),
     initialPageParam: 1,
     getNextPageParam: (l) => (l.meta.page < l.meta.totalPages ? l.meta.page + 1 : undefined),
   });
@@ -60,7 +62,7 @@ export default function Jobs() {
         <FlatList
           data={items}
           keyExtractor={(j) => j._id}
-          contentContainerStyle={{ padding: S.lg, paddingTop: S.sm, gap: S.sm }}
+          contentContainerStyle={{ padding: S.lg, paddingTop: S.sm, paddingBottom: sel.length > 0 ? 90 : TAB.height + insets.bottom + S.xl, gap: S.sm }}
           refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { q.refetch(); newCount.refetch(); }} tintColor={C.brand} />}
           {...LIST_PERF}
           onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}

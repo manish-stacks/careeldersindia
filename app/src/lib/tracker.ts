@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { api } from './api';
 import { backgroundRunning, readTrip, sendFixes, startBackgroundUpdates, stopBackgroundUpdates, writeTrip } from './background-location';
+import { showPermissionDisclosure } from '@/components/permission-disclosure';
 
 /**
  * Trip sharing for assistants.
@@ -30,6 +31,7 @@ export async function ensureLocationPermission() {
   const cur = await Location.getForegroundPermissionsAsync();
   if (cur.granted) return true;
   if (!cur.canAskAgain) return false;
+  showPermissionDisclosure();
   return (await Location.requestForegroundPermissionsAsync()).granted;
 }
 
@@ -39,6 +41,7 @@ export async function ensureBackgroundPermission() {
   const bg = await Location.getBackgroundPermissionsAsync();
   if (bg.granted) return true;
   if (!bg.canAskAgain) return false;
+  showPermissionDisclosure();
   return (await Location.requestBackgroundPermissionsAsync()).granted;
 }
 

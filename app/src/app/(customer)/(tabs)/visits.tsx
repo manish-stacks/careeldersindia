@@ -2,24 +2,26 @@ import { useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { api, qs } from '@/lib/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, qs, type PagedResponse } from '@/lib/api';
 import { visitTime } from '@/lib/format';
-import { C, S } from '@/lib/theme';
+import { C, S, TAB } from '@/lib/theme';
 import type { Booking } from '@/lib/types';
 import { Button, Card, Empty, ErrorView, Loading, Segmented, T } from '@/components/ui';
 import { StatusBadge } from '@/components/status';
 import { FilterBar, LIST_PERF, PAST_DATES, UPCOMING_DATES, dateRange, useDebounced, type DateKey } from '@/components/filters';
 
 export default function Visits() {
+  const insets = useSafeAreaInsets();
   const [scope, setScope] = useState<'upcoming' | 'past'>('upcoming');
   const [search, setSearch] = useState('');
   const [date, setDate] = useState<DateKey>('any');
   const term = useDebounced(search.trim());
   const filtered = !!term || date !== 'any';
-  const q = useInfiniteQuery({
+  const q = useInfiniteQuery<PagedResponse<Booking>>({
     queryKey: ['bookings', scope, term, date],
     placeholderData: (prev) => prev,
-    queryFn: ({ pageParam }) => api.page<Booking>(`/customer/bookings${qs({ scope, q: term || undefined, ...dateRange(date), page: pageParam, limit: 20 })}`),
+    queryFn: ({ pageParam }) => api.page<Booking>(`/customer/bookings${qs({ scope, q: term || undefined, ...dateRange(date), page: pageParam as number, limit: 20 })}`),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.meta.page < last.meta.totalPages ? last.meta.page + 1 : undefined),
   });
@@ -41,7 +43,7 @@ export default function Visits() {
         <FlatList
           data={items}
           keyExtractor={(b) => b._id}
-          contentContainerStyle={{ padding: S.lg, paddingTop: S.sm, gap: S.sm }}
+          contentContainerStyle={{ padding: S.lg, paddingTop: S.sm, paddingBottom: TAB.height + insets.bottom + S.xl, gap: S.sm }}
           refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={C.brand} />}
           {...LIST_PERF}
           onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}

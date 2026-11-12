@@ -16,6 +16,7 @@ async function fetchT(url: string, init: RequestInit, ms = 15000) {
 }
 
 export type PageMeta = { page: number; limit: number; total: number; totalPages: number; unread?: number };
+export type PagedResponse<T> = { items: T[]; meta: PageMeta };
 export class ApiError extends Error {
   status: number;
   code?: string;

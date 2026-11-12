@@ -48,8 +48,20 @@ export default function Login() {
           <Input value={identifier} onChangeText={setIdentifier} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="username" autoComplete="username" placeholder="you@example.com" />
         </Field>
         <Field label="Password">
-          <View>
-            <Input value={password} onChangeText={setPassword} secureTextEntry={!show} textContentType="password" autoComplete="password" onSubmitEditing={submit} returnKeyType="go" style={{ paddingRight: 52 }} placeholder="••••••••" />
+          <View style={{ position: 'relative', justifyContent: 'center' }}>
+            <Input
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!show}
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="password"
+              autoComplete="password"
+              onSubmitEditing={submit}
+              returnKeyType="go"
+              style={{ paddingRight: 52 }}
+              placeholder="Enter your password"
+            />
             <Pressable accessibilityRole="button" accessibilityLabel={show ? 'Hide password' : 'Show password'} onPress={() => setShow((s) => !s)} style={styles.eye} hitSlop={8}>
               <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={22} color={C.muted} />
             </Pressable>

@@ -8,6 +8,7 @@ import { confirm } from '@/lib/hooks';
 import { humanize } from '@/lib/format';
 import { S } from '@/lib/theme';
 import type { AssistantDoc, AssistantProfile, User } from '@/lib/types';
+import { showPermissionDisclosure } from '@/components/permission-disclosure';
 import { Badge, Card, ErrorView, Loading, Row, Screen, T } from '@/components/ui';
 
 type ProfileRes = { user: Pick<User, '_id' | 'name' | 'email' | 'mobile'>; profile: AssistantProfile; documents: AssistantDoc[] };
@@ -34,6 +35,7 @@ export default function Me() {
         <Row icon="create-outline" title="Profile, areas and bank" subtitle={p.serviceAreas.map((a) => a.city).join(', ') || 'Add service areas'} onPress={() => router.push('/profile-edit')} last />
       </Card>
       <Card style={{ paddingVertical: 0, marginTop: S.lg }}>
+        <Row icon="shield-checkmark-outline" title="Permissions & Privacy" subtitle="Location tracking & notification disclosures" onPress={() => showPermissionDisclosure()} />
         <Row icon="notifications-outline" title="Notifications" onPress={() => router.push('/notifications')} />
         <Row icon="key-outline" title="Change password" onPress={() => router.push('/change-password')} />
         <Row icon="warning-outline" title="Emergency help" danger onPress={() => router.push('/sos')} last />

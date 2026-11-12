@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/hooks';
 import { pushSupported } from '@/lib/push';
 import { S } from '@/lib/theme';
+import { showPermissionDisclosure } from '@/components/permission-disclosure';
 import { Card, Notice, Row, Screen, T } from '@/components/ui';
 
 type Contact = { email?: string; phone?: string; whatsapp?: string };
@@ -29,6 +30,7 @@ export default function Account() {
         {contact?.phone ? <Row icon="call-outline" title="Call the care team" subtitle={contact.phone} onPress={() => Linking.openURL(`tel:${contact.phone}`)} /> : null}
         {contact?.email ? <Row icon="mail-outline" title="Email us" subtitle={contact.email} onPress={() => Linking.openURL(`mailto:${contact.email}`)} /> : null}
         <Row icon="warning-outline" title="Emergency help" onPress={() => router.push('/sos')} danger />
+        <Row icon="shield-checkmark-outline" title="Permissions & Privacy" subtitle="Location tracking & notification disclosures" onPress={() => showPermissionDisclosure()} />
         <Row icon="key-outline" title="Change password" onPress={() => router.push('/change-password')} last />
       </Card>
       {!pushSupported() && (

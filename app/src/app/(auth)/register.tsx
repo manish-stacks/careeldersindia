@@ -59,7 +59,7 @@ export default function Register() {
         </View>
       </Field>
       <Field label="Password" required hint="At least 8 characters with a letter and a number." error={f.password && !strong ? 'Add a letter and a number, 8+ characters' : undefined}>
-        <Input value={f.password} onChangeText={set('password')} secureTextEntry autoComplete="new-password" textContentType="newPassword" />
+        <Input value={f.password} onChangeText={set('password')} secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete="new-password" textContentType="newPassword" placeholder="Enter password" />
       </Field>
       <T v="caption">Times in the app are shown in India time with your local time ({tz}) alongside.</T>
       {error && <View style={{ marginTop: S.lg }}><Notice tone="danger" title={error} /></View>}

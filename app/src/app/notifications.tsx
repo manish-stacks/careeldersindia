@@ -1,7 +1,8 @@
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { api, qs } from '@/lib/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api, qs, type PagedResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useAction } from '@/lib/hooks';
 import { relative } from '@/lib/format';
@@ -12,10 +13,11 @@ import { Button, Empty, ErrorView, Loading, T } from '@/components/ui';
 import { LIST_PERF } from '@/components/filters';
 
 export default function Notifications() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const q = useInfiniteQuery({
+  const q = useInfiniteQuery<PagedResponse<N>>({
     queryKey: ['notifications'],
-    queryFn: ({ pageParam }) => api.page<N>(`/notifications${qs({ page: pageParam, limit: 30 })}`),
+    queryFn: ({ pageParam }) => api.page<N>(`/notifications${qs({ page: pageParam as number, limit: 30 })}`),
     initialPageParam: 1,
     getNextPageParam: (l) => (l.meta.page < l.meta.totalPages ? l.meta.page + 1 : undefined),
   });
@@ -37,7 +39,8 @@ export default function Notifications() {
 
   return (
     <FlatList
-      style={{ backgroundColor: C.canvas }}
+      style={{ flex: 1, backgroundColor: C.canvas }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + S.xl }}
       data={items}
       keyExtractor={(n) => n._id}
       refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => q.refetch()} tintColor={C.brand} />}

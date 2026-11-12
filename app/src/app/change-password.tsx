@@ -18,9 +18,9 @@ export default function ChangePassword() {
   });
   return (
     <Screen footer={<Button title="Change password" loading={save.isPending} disabled={!current || !strong || next !== again} onPress={() => save.mutate()} />}>
-      <Field label="Current password"><Input value={current} onChangeText={setCurrent} secureTextEntry autoComplete="current-password" /></Field>
-      <Field label="New password" hint="8+ characters with a letter and a number."><Input value={next} onChangeText={setNext} secureTextEntry autoComplete="new-password" /></Field>
-      <Field label="Repeat new password" error={again && again !== next ? "Passwords don't match" : undefined}><Input value={again} onChangeText={setAgain} secureTextEntry /></Field>
+      <Field label="Current password"><Input value={current} onChangeText={setCurrent} secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete="current-password" placeholder="Enter current password" /></Field>
+      <Field label="New password" hint="8+ characters with a letter and a number."><Input value={next} onChangeText={setNext} secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete="new-password" placeholder="Enter new password" /></Field>
+      <Field label="Repeat new password" error={again && again !== next ? "Passwords don't match" : undefined}><Input value={again} onChangeText={setAgain} secureTextEntry autoCapitalize="none" autoCorrect={false} placeholder="Repeat new password" /></Field>
       <T v="small">Changing your password signs you out on all other devices.</T>
     </Screen>
   );

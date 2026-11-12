@@ -30,7 +30,7 @@ export type Booking = {
   _id: string; bookingNumber: string; status: BookingStatus; scheduledAt: string; endsAt: string; scheduledLocal: { date: string; time: string }; durationMinutes: number;
   parentId: string; serviceId: string; recurringPlanId?: string; paymentStatus: string; price: { amount: number; discount?: number; currency: string };
   addressSnapshot: Address; locationSnapshot?: { lat: number; lng: number }; parentSnapshot: { fullName: string; mobile?: string; gender?: string; bloodGroup?: string }; assistant?: { id: string; name: string; mobile?: string } | null; serviceSnapshot: { name: string; durationMinutes: number };
-  assistant?: { id: string; name?: string } | null; customerNotes?: string; reportId?: string; visitId?: string;
+  customerNotes?: string; reportId?: string; visitId?: string;
   statusHistory?: { from: string | null; to: BookingStatus; at: string; note?: string }[];
   cancellation?: { role?: string; reason?: string; at?: string }; travel?: { startedAt?: string; reachedAt?: string }; createdAt: string;
 };

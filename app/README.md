@@ -15,7 +15,10 @@ npx expo start                # scan with Expo Go (SDK 57) or a dev build
 
 Backend must be reachable from the phone. In `backend/.env` also set `API_PUBLIC_URL=http://<your-LAN-IP>:5000` so photo/PDF links open on the phone (the app rewrites `localhost` links as a fallback).
 
-Demo logins (after `npm run seed:reset` in backend): `rohan@example.com` / `Customer@123` (customer), `neha@careeldersindia.com` / `Assistant@123` (assistant with a live visit), `vikram@careeldersindia.com` / `Assistant@123` (pending verification).
+Demo logins (after `npm run seed:reset` in backend): 
+`rohan@example.com` / `Customer@123` (customer), 
+`neha@careeldersindia.com` / `Assistant@123` (assistant with a live visit), 
+`vikram@careeldersindia.com` / `Assistant@123` (pending verification).
 
 ## What works where
 
