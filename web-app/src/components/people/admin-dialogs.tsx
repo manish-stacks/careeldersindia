@@ -67,13 +67,203 @@ export function LoginToggleButton({ userId, enabled, invalidate }: { userId: str
 }
 
 export function ResetPasswordButton({ userId }: { userId: string }) {
-  const [pw, setPw] = useState<string | null>(null);
-  const act = useAction(() => post<{ temporaryPassword: string }>(`/admin/users/${userId}/reset-password`).then((r) => r.data), { onDone: (r) => setPw(r.temporaryPassword) });
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'auto' | 'manual'>('auto');
+  const [manualPassword, setManualPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [done, setDone] = useState<{ password: string; isManual: boolean } | null>(null);
+
+  const act = useAction(
+    () =>
+      post<{ temporaryPassword: string; isManual?: boolean }>(
+        `/admin/users/${userId}/reset-password`,
+        mode === 'manual' ? { password: manualPassword.trim() } : {}
+      ).then((r) => r.data),
+    {
+      onDone: (r) => {
+        setDone({ password: r.temporaryPassword, isManual: Boolean(r.isManual) });
+        setManualPassword('');
+      },
+    }
+  );
+
+  const copy = () => {
+    if (!done?.password) return;
+    navigator.clipboard.writeText(done.password);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setDone(null);
+    setManualPassword('');
+    setCopied(false);
+  };
+
+  const manualValid = mode === 'auto' || manualPassword.trim().length >= 8;
+
   return (
     <>
-      <Button variant="secondary" loading={act.isPending} onClick={() => act.mutate(undefined)}>Reset password</Button>
-      {pw && <Dialog open onClose={() => setPw(null)} title="Temporary password" description="Shown only once. The user is signed out everywhere." footer={<Button onClick={() => setPw(null)}>Done</Button>}><p className="select-all font-mono text-lg font-bold">{pw}</p></Dialog>}
+      <Button variant="secondary" onClick={() => setOpen(true)}>Reset password</Button>
+      {open && (
+        <Dialog
+          open
+          onClose={handleClose}
+          title={done ? 'Password updated' : 'Update password'}
+          description={
+            done
+              ? 'Share these sign-in details securely. All active sessions have been signed out.'
+              : 'Choose whether to auto-generate a secure random password or enter a manual password.'
+          }
+          footer={
+            done ? (
+              <Button onClick={handleClose}>Done</Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+                <Button
+                  onClick={() => act.mutate(undefined)}
+                  loading={act.isPending}
+                  disabled={!manualValid}
+                >
+                  {mode === 'auto' ? 'Generate & Save' : 'Set Password'}
+                </Button>
+              </>
+            )
+          }
+        >
+          {done ? (
+            <div className="space-y-3 rounded-lg border border-line bg-surface-muted p-4 text-sm">
+              <p className="text-ink-muted">New {done.isManual ? 'manual' : 'temporary'} password:</p>
+              <div className="flex items-center justify-between gap-3 rounded bg-white p-3 border border-line">
+                <span className="font-mono text-lg font-bold select-all">{done.password}</span>
+                <Button size="sm" variant="secondary" onClick={copy}>
+                  {copied ? 'Copied!' : 'Copy'}
+                </Button>
+              </div>
+              <p className="text-xs text-ink-muted">
+                The user can use this password to sign in immediately.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex rounded-lg border border-line p-1 bg-surface-muted">
+                <button
+                  type="button"
+                  onClick={() => setMode('auto')}
+                  className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition ${
+                    mode === 'auto' ? 'bg-white shadow text-ink' : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  Auto-generate password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('manual')}
+                  className={`flex-1 rounded-md py-1.5 text-sm font-semibold transition ${
+                    mode === 'manual' ? 'bg-white shadow text-ink' : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  Manual password
+                </button>
+              </div>
+
+              {mode === 'auto' ? (
+                <div className="rounded-lg border border-line bg-surface-muted/50 p-4 text-sm text-ink-muted">
+                  A strong, secure password (e.g. <code className="font-mono font-semibold">Pc@...</code>) will be automatically generated and displayed for you to copy.
+                </div>
+              ) : (
+                <Field
+                  label="Enter new password"
+                  hint="At least 8 characters"
+                >
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter minimum 8 characters"
+                      value={manualPassword}
+                      onChange={(e) => setManualPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink text-xs font-semibold"
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </Field>
+              )}
+            </div>
+          )}
+        </Dialog>
+      )}
     </>
+  );
+}
+
+/** Edit customer profile: name, email, phone, country, timezone. */
+export function EditCustomerDialog({
+  user,
+  onClose,
+}: {
+  user: { _id: string; name: string; email: string; mobile?: string; country?: string; timezone?: string };
+  onClose: () => void;
+}) {
+  const [f, setF] = useState({
+    name: user.name || '',
+    email: user.email || '',
+    mobile: user.mobile || '',
+    country: user.country || 'IN',
+    timezone: user.timezone || 'Asia/Kolkata',
+  });
+  const body = {
+    name: f.name.trim(),
+    email: f.email.trim().toLowerCase(),
+    mobile: f.mobile.trim() || undefined,
+    country: f.country,
+    timezone: f.timezone,
+  };
+  const save = useAction(() => patch(`/admin/customers/${user._id}`, body), {
+    success: 'Customer details updated',
+    invalidate: [['customer', user._id], ['customers']],
+    onDone: onClose,
+  });
+  const valid = body.name.length >= 2 && /\S+@\S+\.\S+/.test(body.email);
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      wide
+      title={`Edit ${user.name}`}
+      description="Update customer sign-in email, contact number, and time zone."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate(undefined)} loading={save.isPending} disabled={!valid}>Save changes</Button>
+        </>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Full name">
+          <Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+        </Field>
+        <Field label="Email (sign-in & alerts)">
+          <Input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
+        </Field>
+        <Field label="Mobile (optional)" hint="With country code, e.g. +91… or +1…">
+          <Input value={f.mobile} onChange={(e) => setF({ ...f, mobile: e.target.value })} />
+        </Field>
+        <CountryTimezoneFields
+          country={f.country}
+          timezone={f.timezone}
+          onChange={(country, timezone) => setF((x) => ({ ...x, country, timezone }))}
+        />
+      </div>
+    </Dialog>
   );
 }
 

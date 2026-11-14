@@ -106,7 +106,7 @@ module.exports = {
     ok(res, value, 'Legal pages updated');
   }),
   // Public: one legal page by slug (privacy | terms)
-  getLegalPage: asyncHandler(async (req, res) => {
+    getLegalPage: asyncHandler(async (req, res) => {
     const slug = req.params.slug;
     if (!LEGAL_TITLES[slug]) return res.status(404).json({ success: false, message: 'Page not found' });
     ok(res, { title: LEGAL_TITLES[slug], body: (await readLegal())[slug] });

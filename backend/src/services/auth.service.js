@@ -10,6 +10,7 @@ const { sha256, randomOtp, safeEqual } = require('../utils/crypto');
 const tokenService = require('./token.service');
 const { audit } = require('./audit.service');
 const notifications = require('./notification.service');
+const { sendEventEmail } = require('./email.service');
 
 const BCRYPT_ROUNDS = 12;
 const OTP_TTL_SECONDS = 600;
@@ -21,8 +22,17 @@ const hashPassword = (pw) => bcrypt.hash(pw, BCRYPT_ROUNDS);
 
 function findByIdentifier(identifier) {
   const value = String(identifier).trim().toLowerCase();
-  const query = value.includes('@') ? { email: value } : { mobile: value };
-  return User.findOne(query).select('+passwordHash');
+  if (value.includes('@')) {
+    return User.findOne({ email: value }).select('+passwordHash');
+  }
+  const cleanMobile = value.replace(/[\s-]/g, '');
+  const digits = cleanMobile.replace(/\D/g, '');
+  const variants = [value, cleanMobile];
+  if (digits.length >= 10) {
+    const last10 = digits.slice(-10);
+    variants.push(last10, `+91${last10}`, `91${last10}`, `0${last10}`);
+  }
+  return User.findOne({ mobile: { $in: [...new Set(variants)] } }).select('+passwordHash');
 }
 
 async function assertUnique(email, mobile) {
@@ -115,15 +125,21 @@ async function login({ identifier, password, portal }, ctx) {
 /** Always responds generically — never reveals whether the account exists. */
 async function requestPasswordReset(identifier) {
   const user = await findByIdentifier(identifier);
-  if (!user || user.status !== 'ACTIVE') return;
+  if (!user || user.status !== 'ACTIVE') return { sent: true };
   const otp = randomOtp();
   await redis.set(`otp:reset:${user._id}`, JSON.stringify({ hash: sha256(otp), attempts: 0 }), 'EX', OTP_TTL_SECONDS);
   await deliverOtp(user, otp);
+  return { sent: true, devOtp: !env.isProd ? otp : undefined };
 }
 
-// TODO(prod): plug in SMS (MSG91/Twilio) or email (SES/Resend) provider here.
 async function deliverOtp(user, otp) {
-  if (!env.isProd) logger.warn({ userId: String(user._id) }, `[DEV ONLY] Password reset OTP: ${otp}`);
+  if (user.email) {
+    await sendEventEmail([user._id], {
+      title: 'Care Elders India: Password Reset Code',
+      body: `Your verification code is ${otp}. It will expire in 10 minutes. If you did not request this, please contact support.`,
+    });
+  }
+  logger.info({ userId: String(user._id) }, `Password reset OTP generated: ${otp}`);
 }
 
 async function resetPassword({ identifier, otp, newPassword }) {

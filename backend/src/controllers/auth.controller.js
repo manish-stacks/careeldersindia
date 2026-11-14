@@ -63,8 +63,8 @@ module.exports = {
   }),
 
   forgotPassword: asyncHandler(async (req, res) => {
-    await authService.requestPasswordReset(req.body.identifier);
-    return ok(res, {}, 'If an account exists, a verification code has been sent');
+    const result = await authService.requestPasswordReset(req.body.identifier);
+    return ok(res, result || {}, 'If an account exists, a verification code has been sent');
   }),
 
   resetPassword: asyncHandler(async (req, res) => {

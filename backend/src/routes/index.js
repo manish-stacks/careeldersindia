@@ -161,6 +161,7 @@ adm.get('/parents', validate({ query: pageQuery }), admin.listParents);
 adm.get('/parents/:id', id, admin.getParent);
 adm.post('/parents/:id/photo', upload.single('file'), verifyFileContent, validate({ params: idParam }), customer.parentPhoto);
 adm.get('/parents/:id/sheet-link', validate({ params: idParam, query: vAU.sheetQuery }), sheet.adminLink);
+adm.patch('/customers/:id', withBody(vAU.customerUpdate), adminUsers.updateCustomer);
 adm.delete('/customers/:id', id, adminUsers.deleteCustomer);
 adm.delete('/assistants/:id', id, adminUsers.deleteAssistant);
 adm.patch('/parents/:id', withBody(v.parent.update), admin.updateParent);
@@ -180,7 +181,7 @@ adm.post('/customers', validate({ body: vAU.customer }), adminUsers.createCustom
 adm.post('/customers/:id/parents', withBody(v.parent.create), adminUsers.createParent);
 adm.post('/assistants', validate({ body: vAU.assistant }), adminUsers.createAssistant);
 adm.patch('/users/:id/login', withBody(vAU.login), adminUsers.setLogin); // { enabled: true|false }
-adm.post('/users/:id/reset-password', id, adminUsers.resetPassword);
+adm.post('/users/:id/reset-password', withBody(vAU.resetPassword), adminUsers.resetPassword);
 adm.post('/plans', validate({ body: vAU.plan }), adminUsers.createPlan);
 
 adm.get('/services', admin.listServices);

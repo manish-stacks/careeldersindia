@@ -4,6 +4,7 @@ const { Emitter } = require('@socket.io/redis-emitter');
 const { env } = require('../config/env');
 const { logger } = require('../config/logger');
 const { createRedisClient } = require('../config/redis');
+const { isOriginAllowed } = require('../config/cors');
 const { resolveUserFromToken } = require('../middleware/auth');
 const { ROLES } = require('../config/constants');
 const { rooms, CLIENT_EVENTS } = require('./events');
@@ -16,7 +17,10 @@ let io = null;
 
 function initSocket(httpServer) {
   io = new Server(httpServer, {
-    cors: { origin: [env.ADMIN_APP_URL, env.CLIENT_APP_URL], credentials: true },
+    cors: {
+      origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
+      credentials: true,
+    },
     pingInterval: 20000,
     pingTimeout: 20000,
   });

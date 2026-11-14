@@ -16,7 +16,7 @@ import { Badge, BookingBadge, OverallBadge, PaymentBadge, bookingLabel } from '@
 import { Button } from '@/components/ui/button';
 import { Field, Input, Select, Textarea } from '@/components/ui/form';
 import { Dialog } from '@/components/ui/dialog';
-import { AddParentDialog, CreatePlanDialog, LoginToggleButton, ResetPasswordButton } from '@/components/people/admin-dialogs';
+import { AddParentDialog, CreatePlanDialog, EditCustomerDialog, LoginToggleButton, ResetPasswordButton } from '@/components/people/admin-dialogs';
 import { DeleteParentDialog, EditParentDialog, type ParentFull } from '@/components/people/parent-dialogs';
 import { EditPlanDialog, PlanPaymentDialog, RenewPlanDialog } from '@/components/plans/plan-dialogs';
 import { PLAN_TONE, freqLabel, type Plan } from '@/components/plans/shared';
@@ -52,6 +52,7 @@ export default function CustomerPage() {
   const [editPlan, setEditPlan] = useState<Plan | null>(null);
   const [renewPlan, setRenewPlan] = useState<Plan | null>(null);
   const [payFor, setPayFor] = useState<{ plan: Plan; payment: Payment | null } | null>(null);
+  const [editCustomer, setEditCustomer] = useState(false);
 
   // filters shared by the bookings + reports panels
   const [parentId, setParentId] = useState('');
@@ -84,11 +85,11 @@ export default function CustomerPage() {
         back={{ href: '/customers', label: 'Customers' }}
         title={user.name}
         subtitle={<span className="flex flex-wrap items-center gap-3">{user.email}{user.mobile && <span>{user.mobile}</span>}<Badge tone={active ? 'ok' : 'danger'}>{active ? 'Active' : 'Suspended'}</Badge></span>}
-        actions={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => setAddParent(true)}>+ Add parent</Button><Button disabled={!parents.length} onClick={() => setNewPlan(true)}>Create plan</Button><ResetPasswordButton userId={user._id} /><LoginToggleButton userId={user._id} enabled={active} invalidate={[['customer', id], ['customers']]} /></div>}
+        actions={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => setEditCustomer(true)}><Pencil className="h-4 w-4" />Edit details</Button><Button variant="secondary" onClick={() => setAddParent(true)}>+ Add parent</Button><Button disabled={!parents.length} onClick={() => setNewPlan(true)}>Create plan</Button><ResetPasswordButton userId={user._id} /><LoginToggleButton userId={user._id} enabled={active} invalidate={[['customer', id], ['customers']]} /></div>}
       />
       <div className="grid gap-6 xl:grid-cols-[1fr_1.4fr]">
         <div className="space-y-6">
-          <Panel title="Account">
+          <Panel title="Account" action={<Button size="sm" variant="secondary" onClick={() => setEditCustomer(true)}><Pencil className="h-4 w-4" />Edit</Button>}>
             <KeyVal items={[['Country', user.country], ['Time zone', user.timezone], ['Joined', dateOnly(user.createdAt)], ['Last sign-in', dateTime(user.lastLoginAt)]]} />
           </Panel>
           <Panel title={`Parents (${parents.length})`} bodyClass="p-0">
@@ -218,6 +219,7 @@ export default function CustomerPage() {
           </Panel>
         </div>
       </div>
+      {editCustomer && <EditCustomerDialog user={user} onClose={() => setEditCustomer(false)} />}
       {assignB && <AssignDialog bookingId={assignB._id} current={assignB.current} open onClose={() => { setAssignB(null); bookings.refetch(); }} />}
       {addParent && <AddParentDialog customerId={id} onClose={() => setAddParent(false)} />}
       {newPlan && <CreatePlanDialog customerId={id} parents={parents} onClose={() => setNewPlan(false)} />}

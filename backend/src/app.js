@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const swaggerUi = require('swagger-ui-express');
 const { env } = require('./config/env');
 const { redis } = require('./config/redis');
+const { corsOptions } = require('./config/cors');
 const { requestId, httpLogger } = require('./middleware/requestContext');
 const { apiLimiter } = require('./middleware/rateLimit');
 const { notFound, errorHandler } = require('./middleware/error');
@@ -22,14 +23,8 @@ function createApp() {
   if (!env.isTest) app.use(httpLogger);
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-  const allowed = new Set([env.ADMIN_APP_URL, env.CLIENT_APP_URL].filter(Boolean));
-  app.use(
-    cors({
-      origin: (origin, cb) => cb(null, !origin || allowed.has(origin) || (!env.isProd && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))),
-      credentials: true,
-      exposedHeaders: ['x-request-id'],
-    })
-  );
+  app.use(cors(corsOptions));
+  app.options('*', cors(corsOptions));
   app.use(compression());
 
   // Razorpay webhook must see the exact raw bytes — mount BEFORE express.json()

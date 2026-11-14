@@ -66,16 +66,51 @@ async function setLoginAccess(admin, userId, enabled, req) {
   return user;
 }
 
-async function resetPassword(admin, userId, req) {
+async function resetPassword(admin, userId, input = {}, req) {
   const user = await User.findById(userId);
   if (!user || user.role === ROLES.ADMIN) throw ApiError.notFound('User not found', 'USER_NOT_FOUND');
-  const password = tempPassword();
+  const manual = Boolean(input && input.password);
+  const password = manual ? String(input.password).trim() : tempPassword();
+  if (manual && password.length < 8) {
+    throw ApiError.badRequest('Password must be at least 8 characters long', 'PASSWORD_TOO_SHORT');
+  }
   user.passwordHash = await hashPassword(password);
   user.passwordChangedAt = new Date();
   await user.save();
   await revokeAllForUser(user._id);
-  await audit({ actor: admin, action: 'ADMIN_RESET_PASSWORD', entityType: 'User', entityId: user._id, req });
-  return { temporaryPassword: password };
+  await audit({
+    actor: admin,
+    action: manual ? 'ADMIN_SET_PASSWORD_MANUAL' : 'ADMIN_RESET_PASSWORD_AUTO',
+    entityType: 'User',
+    entityId: user._id,
+    req,
+  });
+  return { temporaryPassword: password, isManual: manual };
+}
+
+/** Admin edits a customer: login identity, email, phone, name, country, timezone */
+async function updateCustomer(admin, userId, input, req) {
+  const user = await User.findOne({ _id: userId, role: ROLES.CUSTOMER });
+  if (!user) throw ApiError.notFound('Customer not found', 'CUSTOMER_NOT_FOUND');
+  const { name, email, mobile, country, timezone } = input;
+  const targetEmail = email ? email.toLowerCase().trim() : undefined;
+  const targetMobile = mobile !== undefined ? (mobile.trim() || undefined) : undefined;
+  if ((targetEmail && targetEmail !== user.email) || (targetMobile && targetMobile !== user.mobile)) {
+    const or = [];
+    if (targetEmail && targetEmail !== user.email) or.push({ email: targetEmail });
+    if (targetMobile && targetMobile !== user.mobile) or.push({ mobile: targetMobile });
+    if (await User.exists({ _id: { $ne: user._id }, $or: or })) {
+      throw ApiError.conflict('Email or mobile is already used by another account', 'ACCOUNT_EXISTS');
+    }
+  }
+  if (name) user.name = name.trim();
+  if (targetEmail) user.email = targetEmail;
+  if (mobile !== undefined) user.mobile = targetMobile;
+  if (country) user.country = country;
+  if (timezone) user.timezone = timezone;
+  await user.save();
+  await audit({ actor: admin, action: 'ADMIN_UPDATED_CUSTOMER', entityType: 'User', entityId: user._id, metadata: { fields: Object.keys(input) }, req });
+  return user;
 }
 
 /** Admin sells/assigns a plan to a customer (payment handled offline). Optionally pins one assistant for every visit. */
@@ -130,15 +165,17 @@ async function updateAssistant(admin, userId, input, req) {
   const profile = await Assistant.findOne({ userId }).select('+bank.accountNumberEnc +pan.numberEnc');
   if (!user || !profile) throw ApiError.notFound('Assistant not found', 'ASSISTANT_NOT_FOUND');
   const { name, email, mobile, bank, panNumber, ...rest } = input;
-  if ((email && email !== user.email) || (mobile && mobile !== user.mobile)) {
+  const targetEmail = email ? email.toLowerCase().trim() : undefined;
+  const targetMobile = mobile !== undefined ? (mobile.trim() || undefined) : undefined;
+  if ((targetEmail && targetEmail !== user.email) || (targetMobile && targetMobile !== user.mobile)) {
     const or = [];
-    if (email && email !== user.email) or.push({ email });
-    if (mobile && mobile !== user.mobile) or.push({ mobile });
+    if (targetEmail && targetEmail !== user.email) or.push({ email: targetEmail });
+    if (targetMobile && targetMobile !== user.mobile) or.push({ mobile: targetMobile });
     if (await User.exists({ _id: { $ne: user._id }, $or: or })) throw ApiError.conflict('Email or mobile is already used by another account', 'ACCOUNT_EXISTS');
   }
-  if (name) user.name = name;
-  if (email) user.email = email;
-  if (mobile) user.mobile = mobile;
+  if (name) user.name = name.trim();
+  if (targetEmail) user.email = targetEmail;
+  if (mobile !== undefined) user.mobile = targetMobile;
   await user.save();
   if (rest.address) rest.address = { ...(profile.address?.toObject?.() || {}), ...rest.address };
   profile.set(rest);
@@ -282,4 +319,4 @@ async function deleteUser(admin, userId, expectedRole, req, { force = false } = 
   return { _id: user._id };
 }
 
-module.exports = { deleteBookings, deleteUser, updateAssistant, addAssistantDocument, deleteAssistantDocument, createCustomer, createAssistant, createParentFor, setLoginAccess, resetPassword, createPlanFor };
+module.exports = { deleteBookings, deleteUser, updateCustomer, updateAssistant, addAssistantDocument, deleteAssistantDocument, createCustomer, createAssistant, createParentFor, setLoginAccess, resetPassword, createPlanFor };

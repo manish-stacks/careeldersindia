@@ -38,3 +38,8 @@ API docs: http://localhost:5201/api-docs (OpenAPI JSON at `/api-docs.json`) · h
 | Role | Login | Password | Notes |
 |---|---|---|---|
 | Admin | admin@parentcare.in | Admin@12345 | admin console |
+
+
+Demo logins (after `npm run seed:reset` in backend): 
+`rohan@careeldersindia.com` / `Customer@123` (customer), 
+`neha@careeldersindia.com` / `Assistant@123` (assistant with a live visit),

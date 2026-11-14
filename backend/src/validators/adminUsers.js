@@ -12,6 +12,16 @@ const base = {
 };
 module.exports = {
   customer: z.object(base),
+  customerUpdate: z.object({
+    name: z.string().trim().min(2).max(120).optional(),
+    email: z.string().trim().toLowerCase().email().optional(),
+    mobile: z.string().trim().min(6).max(20).optional().or(z.literal('')),
+    country: z.string().trim().max(2).optional(),
+    timezone: z.string().trim().max(60).optional(),
+  }),
+  resetPassword: z.object({
+    password: z.string().min(8).max(100).optional(),
+  }).optional(),
   assistant: z.object({ ...base, serviceIds: z.array(objectId).optional(), serviceAreas: z.array(z.any()).optional() }),
   login: z.object({ enabled: z.boolean() }),
   plan: z.object({
